@@ -1015,6 +1015,43 @@ function _initKocDataLahoreSteak() {
     };
   });
 }
+function _initKocDataLagosLifestyle() {
+  const now = new Date().toISOString();
+  const accounts = [
+    { username: 'nigeria.student.am', name: 'Nigeria Student Ambassador', followers: 45200, likes: 68400, bio: 'I am passionate about empowering your mind. www.nigeriastudentambassador.com', region: 'NG' },
+    { username: 'nile_uni', name: 'Nile University of Nigeria', followers: 14800, likes: 240400, bio: 'The official TikTok account of Nile University of Nigeria. Call: 09030001211', region: 'NG' },
+    { username: 'lagoslifestyletv', name: 'LagoslifestyleTv', followers: 23500, likes: 178100, bio: 'Unfiltered Lagos | Real Gist | Lifestyle | Music | Fashion', region: 'NG' },
+    { username: 'lagoswaterlifestyle', name: 'LAGOSWATERLIFESTYLE', followers: 31200, likes: 11600, bio: 'BOAT RENTAL || BOAT CRUISE || BEACH HOUSE || MANAGEMENT', region: 'NG' },
+    { username: 'fgcyouthng', name: 'Foursquare Youth Nigeria', followers: 6165, likes: 88100, bio: 'Official TikTok page of the National Youth Wing of the Foursquare Gospel Church in Nigeria', region: 'NG' },
+    { username: 'unilagnigeria', name: 'University of Lagos', followers: 4247, likes: 49900, bio: 'Official TikTok account of the University of Lagos, #UnilagNigeria', region: 'NG' },
+    { username: 'unilagstudentbraider', name: 'UNILAG STUDENT BRAIDER', followers: 2996, likes: 28100, bio: 'Braiding & Ghana weaving | Pedicure & manicure | Revamping', region: 'NG' },
+    { username: 'naijacampusjams', name: 'Amba', followers: 2298, likes: 5200, bio: 'Follow Naijacampusjams.com for any viral videos', region: 'NG' },
+    { username: 'lagoslifestylee', name: 'lagoslifestylee', followers: 1823, likes: 121600, bio: '✨ Lagos through my lens 📍🇳🇬 | Paparazzi • Lifestyle • Events | Where vibes meet visuals', region: 'NG' },
+    { username: 'lalovlogger', name: 'lalovlogger', followers: 1063, likes: 32400, bio: 'foodi | Daily vibes | storytelling', region: 'NG' },
+    { username: 'lagos_larissa', name: 'lagos', followers: 1119, likes: 20500, bio: 'Proverbs 16:3', region: 'NG' },
+    { username: 'yinigeria', name: 'Young Innovators of Nigeria', followers: 900, likes: 3826, bio: 'YIN | Bridging Nigeria\'s digital skills gap through tech talent & innovation | Empowered 30,000+ in Digital Literacy', region: 'NG' },
+    { username: 'ruphywealth7', name: 'GEN_Z tailor in Lagos Ipaja', followers: 854, likes: 11400, bio: 'Making fashion fun & fabulous 💫🧵 | Let\'s create your perfect look! | 07075614155', region: 'NG' },
+  ];
+  return accounts.map(a => ({
+    id: 'ls_' + a.username,
+    username: a.username,
+    name: a.name,
+    followers: a.followers,
+    likes: a.likes,
+    videos: 0,
+    bio: a.bio,
+    region: a.region,
+    category: 'lagos/lifestyle',
+    avgViews: 0,
+    engagementRate: parseFloat((a.likes / (a.followers * 10)).toFixed(2)),
+    audienceCity: 'Lagos',
+    audienceCityRate: 50,
+    tags: [],
+    hasTechContent: 'no',
+    addedAt: now,
+  }));
+}
+
 let kocData = [];
 let trackingList = [];
 let briefs = {};
@@ -1032,7 +1069,7 @@ async function initApp() {
     console.error('Supabase load error:', error);
     loadingEl.textContent = '数据库连接失败，使用本地数据';
     setTimeout(() => loadingEl.remove(), 2000);
-    kocData = [..._initKocData(), ..._initKocDataLahoreSteak()];
+    kocData = [..._initKocData(), ..._initKocDataLahoreSteak(), ..._initKocDataLagosLifestyle()];
     renderInputTable();
     return;
   }
@@ -1040,8 +1077,8 @@ async function initApp() {
   if (data && data.length > 0) {
     kocData = data.map(_rowToKoc);
   } else {
-    // 首次使用：把40条预置数据写入数据库
-    const seed = [..._initKocData(), ..._initKocDataLahoreSteak()];
+    // 首次使用：把预置数据写入数据库
+    const seed = [..._initKocData(), ..._initKocDataLahoreSteak(), ..._initKocDataLagosLifestyle()];
     const rows = seed.map(_kocToRow);
     const { error: seedErr } = await _SB.from('koc_list').insert(rows);
     if (seedErr) console.error('Seed error:', seedErr);
