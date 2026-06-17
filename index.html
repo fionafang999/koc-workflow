@@ -655,6 +655,7 @@
     <input id="filter-search" placeholder="搜索账号名..." style="min-width:160px;" oninput="renderScreening()">
     <button class="btn btn-sm" onclick="exportCSV()">⬇️ 导出结果</button>
     <button class="btn btn-sm" onclick="generateAllBriefs()">📝 生成所有 Brief</button>
+    <button class="btn btn-sm" onclick="if(confirm('重置将清除所有筛选标注，重新加载全部种子数据，确认继续？')){resetAndSeed();renderInputTable();renderScreening();showToast('✅ 数据已重置，共'+kocData.length+'个KOC');}" style="color:var(--fail);border-color:var(--fail);">🔄 重置数据</button>
   </div>
 
   <div class="table-wrap">
@@ -856,9 +857,14 @@
 <script>
 // =================== LOCAL STORAGE ===================
 const LS_KEY = 'koc_workflow_v1';
+const LS_VER_KEY = 'koc_workflow_ver';
+const CURRENT_VER = 4; // bump when adding new seed batches
 
 function _lsSave() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(kocData)); } catch(e) {}
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(kocData));
+    localStorage.setItem(LS_VER_KEY, String(CURRENT_VER));
+  } catch(e) {}
 }
 
 function _lsLoad() {
@@ -866,6 +872,10 @@ function _lsLoad() {
     const raw = localStorage.getItem(LS_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch(e) { return null; }
+}
+
+function _seedAll() {
+  return [..._initKocData(), ..._initKocDataLahoreSteak(), ..._initKocDataLagosLifestyle(), ..._initKocDataVlog()];
 }
 
 // =================== DATA STORE ===================
@@ -1060,18 +1070,26 @@ let trackingList = [];
 let briefs = {};
 let currentPlatform = 'tiktok';
 
+function resetAndSeed() {
+  kocData = _seedAll();
+  _lsSave();
+}
+
 function initApp() {
+  const storedVer = parseInt(localStorage.getItem(LS_VER_KEY) || '0');
   const saved = _lsLoad();
-  if (saved && saved.length > 0) {
+
+  if (saved && saved.length > 0 && storedVer >= CURRENT_VER) {
     kocData = saved;
-    // migrate: add vlog batch if not yet present
-    const hasVlog = kocData.some(k => k.id && k.id.startsWith('vlog_'));
-    if (!hasVlog) {
-      kocData = [...kocData, ..._initKocDataVlog()];
-      _lsSave();
-    }
+  } else if (saved && saved.length > 0) {
+    // older version — merge in any missing seed batches
+    const ids = new Set(saved.map(k => String(k.id)));
+    const fresh = _seedAll().filter(k => !ids.has(String(k.id)));
+    kocData = [...saved, ...fresh];
+    _lsSave();
   } else {
-    kocData = [..._initKocData(), ..._initKocDataLahoreSteak(), ..._initKocDataLagosLifestyle(), ..._initKocDataVlog()];
+    // no data at all — full seed
+    kocData = _seedAll();
     _lsSave();
   }
   renderInputTable();
