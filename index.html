@@ -1011,6 +1011,50 @@ function _initKocDataLagosLifestyle() {
   }));
 }
 
+function _initKocDataVlog() {
+  const now = new Date().toISOString();
+  const accounts = [
+    { username: 'najalivestyle', name: 'NaJaLiveStyle', followers: 17600, likes: 170300, bio: 'Naija lifestyle vlog | Daily life in Nigeria', region: 'NG' },
+    { username: 'naija_fashion_styles', name: 'Naija Fashion Styles', followers: 131400, likes: 2500000, bio: 'Nigerian fashion & lifestyle content | Style inspiration', region: 'NG' },
+    { username: 'abuja_lifestyle1', name: 'Abuja Lifestyle', followers: 18300, likes: 778000, bio: 'Abuja lifestyle vlog | Street gist | Food | Entertainment', region: 'NG' },
+    { username: 'abujablog2', name: 'ABUJA BLOGGERS', followers: 280700, likes: 2300000, bio: 'Everything Abuja | Lifestyle | Events | Gist | Trending content', region: 'NG' },
+    { username: 'oceeythecreator', name: 'Abuja Lifestyle Photographer', followers: 5758, likes: 245800, bio: 'Abuja lifestyle photographer & content creator | Capturing real moments', region: 'NG' },
+    { username: 'feastwithbayo', name: 'Nigerians VS Food', followers: 585200, likes: 12500000, bio: 'Trying Nigerian street food, local restaurants & food challenges across Lagos', region: 'NG' },
+    { username: 'foodlums', name: 'Nigerians VS Food', followers: 752300, likes: 12200000, bio: 'Nigerian food vlogger | Lagos food reviews | Street food adventures', region: 'NG' },
+    { username: 'foodandme01', name: 'Nigeriafoodblog', followers: 13000, likes: 57900, bio: 'Food blogger in Nigeria | Reviews | Recipes | Eating spots', region: 'NG' },
+    { username: 'nigeriasweetfood', name: 'NIGERIAN FOOD', followers: 14700, likes: 19800, bio: 'Nigerian food content | Recipes & cooking vlogs', region: 'NG' },
+    { username: 'bimpzy_pots_and_wraps', name: 'Bimpzy Pots & Wraps', followers: 12100, likes: 237000, bio: 'Food vendor in Lagos | Homemade meals | Daily life content', region: 'NG' },
+    { username: 'veesfoodieshub', name: 'LAGOS / ABUJA FOOD BOSS', followers: 18100, likes: 129700, bio: 'Food reviews | Lagos & Abuja dining spots | Street food vlogs', region: 'NG' },
+    { username: 'mykitchen_lagos', name: 'MY KITCHEN LAGOS', followers: 102600, likes: 1500000, bio: 'Lagos kitchen content | Cooking vlogs | Nigerian recipes', region: 'NG' },
+    { username: 'bookishigboqueen', name: 'Books Cocktails Lagos Life', followers: 11100, likes: 101300, bio: 'Lagos lifestyle | Books | Cocktails | City life content', region: 'NG' },
+    { username: 'gifty_hair2', name: 'HAIRSTYLIST IN LAGOS/LEKKI', followers: 66100, likes: 404600, bio: 'Lagos hairstylist vlog | Lekki | Hair content & tutorials', region: 'NG' },
+    { username: 'damselsecret', name: 'Med Spa In Lekki Lagos', followers: 59700, likes: 618200, bio: 'Beauty & wellness vlog | Lekki Lagos | Skincare & lifestyle', region: 'NG' },
+    { username: 'kezartistry', name: 'GELEARTIST IN LAGOS', followers: 55800, likes: 573500, bio: 'Gele artistry & fashion content | Lagos lifestyle vlog', region: 'NG' },
+    { username: 'bakedbybusayo', name: 'Bento Cakes In Lagos', followers: 62400, likes: 4000000, bio: 'Lagos baker vlog | Bento cakes | Day in my life content', region: 'NG' },
+    { username: 'surprise_haven_', name: 'SURPRISES IN BENIN/LAGOS', followers: 166100, likes: 2300000, bio: 'Surprise planning vlog | Benin & Lagos | Lifestyle & events', region: 'NG' },
+    { username: 'alphacruisetravels', name: 'Alpha Cruise Travels', followers: 19200, likes: 289700, bio: 'Travel vlog Nigeria | Lagos travel content | Adventure & lifestyle', region: 'NG' },
+    { username: 'nigerian_studentincanada', name: 'Nigerian Student In Canada', followers: 5245, likes: 27700, bio: 'Nigerian student vlog | Life in Canada | Campus & diaspora content', region: 'NG' },
+  ];
+  return accounts.map(a => ({
+    id: 'vlog_' + a.username,
+    username: a.username,
+    name: a.name,
+    followers: a.followers,
+    likes: a.likes,
+    videos: 0,
+    bio: a.bio,
+    region: a.region,
+    category: 'nigeria/vlog',
+    avgViews: 0,
+    engagementRate: parseFloat((a.likes / (a.followers * 10)).toFixed(2)),
+    audienceCity: 'Lagos',
+    audienceCityRate: 50,
+    tags: [],
+    hasTechContent: 'no',
+    addedAt: now,
+  }));
+}
+
 let kocData = [];
 let trackingList = [];
 let briefs = {};
@@ -1020,8 +1064,14 @@ function initApp() {
   const saved = _lsLoad();
   if (saved && saved.length > 0) {
     kocData = saved;
+    // migrate: add vlog batch if not yet present
+    const hasVlog = kocData.some(k => k.id && k.id.startsWith('vlog_'));
+    if (!hasVlog) {
+      kocData = [...kocData, ..._initKocDataVlog()];
+      _lsSave();
+    }
   } else {
-    kocData = [..._initKocData(), ..._initKocDataLahoreSteak(), ..._initKocDataLagosLifestyle()];
+    kocData = [..._initKocData(), ..._initKocDataLahoreSteak(), ..._initKocDataLagosLifestyle(), ..._initKocDataVlog()];
     _lsSave();
   }
   renderInputTable();
