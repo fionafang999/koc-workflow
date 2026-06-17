@@ -1,0 +1,2880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infinix Hot 70 · KOC 筛选工作流</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --brand: #FF6B00;
+    --brand-light: #FFF3E8;
+    --brand-mid: #FF8C33;
+    --pass: #1D9E75;
+    --pass-bg: #E1F5EE;
+    --fail: #A32D2D;
+    --fail-bg: #FCEBEB;
+    --risk: #BA7517;
+    --risk-bg: #FAEEDA;
+    --bg: #F5F4F0;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.1);
+    --border-md: rgba(0,0,0,0.18);
+    --text: #1A1A1A;
+    --text-2: #555;
+    --text-3: #888;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+  /* Layout */
+  .app-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .logo-badge { background: var(--brand); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; }
+  .app-header h1 { font-size: 15px; font-weight: 600; color: var(--text); }
+  .header-meta { margin-left: auto; font-size: 12px; color: var(--text-3); }
+
+  .app-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 0; }
+  .nav-tab { padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--text-2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .nav-tab:hover { color: var(--brand); }
+  .nav-tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+  .app-body { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .card-title .badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
+  .badge-tiktok { background: #000; color: #fff; }
+  .badge-ig { background: linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045); color: #fff; }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+  .form-group input, .form-group select, .form-group textarea {
+    border: 1px solid var(--border-md); border-radius: 8px; padding: 7px 10px;
+    font-size: 13px; color: var(--text); background: var(--surface);
+    outline: none; transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--brand); }
+  .form-group .hint { font-size: 11px; color: var(--text-3); }
+  .form-section-title { font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.8px; margin: 16px 0 10px; grid-column: 1/-1; border-top: 1px solid var(--border); padding-top: 14px; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border-md); background: var(--surface); color: var(--text); transition: all 0.15s; }
+  .btn:hover { background: var(--bg); }
+  .btn-primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .btn-primary:hover { background: var(--brand-mid); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* Optional field highlight */
+  .form-group.optional label { color: var(--brand); }
+  .form-group.optional input, .form-group.optional select, .form-group.optional textarea {
+    border: 1.5px dashed var(--brand-mid); background: var(--brand-light);
+  }
+  .form-group.optional input:focus, .form-group.optional select:focus { border-color: var(--brand); }
+  .form-section-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.8px; margin: 18px 0 10px; grid-column: 1/-1; display: flex; align-items: center; gap: 8px; }
+  .form-section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+  .field-legend { display: flex; gap: 16px; font-size: 11px; color: var(--text-3); margin-bottom: 12px; }
+  .field-legend span { display: flex; align-items: center; gap: 5px; }
+  .dot-req { width: 8px; height: 8px; border-radius: 50%; background: var(--border-md); display: inline-block; }
+  .dot-opt { width: 8px; height: 8px; border-radius: 50%; background: var(--brand-mid); display: inline-block; }
+
+  /* Upload zone */
+  .upload-zone { border: 2px dashed var(--border-md); border-radius: var(--radius); padding: 32px; text-align: center; cursor: pointer; transition: all 0.15s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--brand); background: var(--brand-light); }
+  .upload-zone p { color: var(--text-2); font-size: 13px; margin-top: 8px; }
+  .upload-zone .icon { font-size: 32px; color: var(--text-3); }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  thead th { background: var(--bg); padding: 10px 12px; text-align: left; font-weight: 600; color: var(--text-2); border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #FAFAFA; }
+  .td-name { font-weight: 500; color: var(--text); }
+  .td-link { color: var(--brand); text-decoration: none; font-size: 11px; }
+  .td-link:hover { text-decoration: underline; }
+
+  /* Status badges */
+  .status-pass { background: var(--pass-bg); color: var(--pass); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+  .status-fail { background: var(--fail-bg); color: var(--fail); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+  .status-risk { background: var(--risk-bg); color: var(--risk); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+  .status-pending { background: #F1EFE8; color: #5F5E5A; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+
+  /* Score bar */
+  .score-bar { display: flex; align-items: center; gap: 6px; }
+  .score-track { width: 60px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .score-num { font-size: 11px; font-weight: 600; min-width: 28px; }
+
+  /* Risk tags */
+  .risk-tag { font-size: 10px; background: var(--risk-bg); color: var(--risk); padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 1px; }
+
+  /* Stats row */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-label { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 600; color: var(--text); }
+  .stat-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+  /* Brief */
+  .brief-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 16px; }
+  .brief-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; gap: 16px; }
+  .brief-koc-name { font-size: 17px; font-weight: 600; }
+  .brief-platform { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+  .brief-section { margin-bottom: 14px; }
+  .brief-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-3); margin-bottom: 6px; }
+  .brief-content { font-size: 13px; color: var(--text); line-height: 1.7; background: var(--bg); border-radius: 8px; padding: 12px 14px; }
+  .brief-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .brief-tag { background: var(--brand-light); color: var(--brand); font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 6px; }
+  .brief-deliverable { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .brief-deliverable:last-child { border-bottom: none; }
+  .brief-num { width: 20px; height: 20px; background: var(--brand-light); color: var(--brand); font-size: 11px; font-weight: 600; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-3); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state h3 { font-size: 15px; font-weight: 500; color: var(--text-2); margin-bottom: 6px; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .filter-bar select, .filter-bar input { padding: 6px 10px; border: 1px solid var(--border-md); border-radius: 8px; font-size: 12px; background: var(--surface); color: var(--text); outline: none; }
+  .filter-bar input:focus, .filter-bar select:focus { border-color: var(--brand); }
+
+  /* Progress indicator */
+  .rule-check { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 0; }
+  .rule-icon { font-size: 14px; width: 18px; text-align: center; }
+  .rule-pass { color: var(--pass); }
+  .rule-fail { color: var(--fail); }
+  .rule-warn { color: var(--risk); }
+
+  /* Modal overlay using normal-flow wrapper */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; width: min(600px, 90vw); max-height: 85vh; overflow-y: auto; }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .modal-close { cursor: pointer; color: var(--text-3); font-size: 18px; background: none; border: none; }
+
+  /* Tooltip */
+  .tooltip-wrap { position: relative; display: inline-flex; }
+  .tooltip-wrap .tt { position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: #333; color: #fff; font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 50; }
+  .tooltip-wrap:hover .tt { opacity: 1; }
+
+  /* CSV preview */
+  .csv-preview { max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+  .csv-preview table { font-size: 11px; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .app-body { padding: 12px; }
+  }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.2s ease; }
+
+  /* Print */
+  @media print { .app-nav, .btn-group, .filter-bar, .app-header { display: none; } .panel { display: block !important; } }
+  .kw-chip { display:inline-flex;align-items:center;gap:4px;background:var(--brand-light);color:var(--brand);border:1px solid var(--brand-mid);border-radius:12px;padding:3px 10px;font-size:11px; }
+  .kw-chip .rm { cursor:pointer;opacity:.6; }
+  .kw-chip .rm:hover { opacity:1; }
+  .kw-suggest { cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:2px 8px;font-size:11px;color:var(--text-2); }
+  .kw-suggest:hover { border-color:var(--brand);color:var(--brand); }
+  #crawl-tbody tr:hover { background:var(--surface); }
+  #crawl-tbody td { padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle; }
+  .status-ok { color:#27ae60;font-weight:600; }
+  .status-err { color:#e74c3c; }
+  .status-loading { color:var(--brand); }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <span class="logo-badge">INFINIX</span>
+  <h1>Hot 70 · KOC 筛选工作流</h1>
+  <span class="header-meta">Global KOC Recruitment</span>
+</header>
+
+<nav class="app-nav">
+  <div class="nav-tab active" data-panel="panel-brief">① 合作 Brief</div>
+  <div class="nav-tab" data-panel="panel-koc">② 筛选 KOC</div>
+  <div class="nav-tab" data-panel="panel-screening">③ 筛选结果</div>
+  <div class="nav-tab" data-panel="panel-tracking">④ KOC Tracking</div>
+</nav>
+
+<div class="app-body">
+
+<!-- =================== PANEL 1: 筛选 KOC =================== -->
+<div class="panel active" id="panel-koc">
+
+<!-- 子模式选择卡 -->
+<div id="koc-mode-select" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+  <div class="koc-mode-card" id="mode-card-input" onclick="switchKocMode('input')" style="cursor:pointer;border:2px solid var(--brand);border-radius:12px;padding:20px 24px;background:var(--brand-light);display:flex;align-items:center;gap:16px;">
+    <div style="font-size:32px;">✏️</div>
+    <div>
+      <div style="font-size:14px;font-weight:700;color:var(--brand);margin-bottom:4px;">手动录入</div>
+      <div style="font-size:12px;color:var(--text-3);">填写表单逐个录入 KOC 信息</div>
+    </div>
+    <div style="margin-left:auto;color:var(--brand);font-size:18px;">›</div>
+  </div>
+  <div class="koc-mode-card" id="mode-card-crawl" onclick="switchKocMode('crawl')" style="cursor:pointer;border:2px solid var(--border);border-radius:12px;padding:20px 24px;background:var(--surface);display:flex;align-items:center;gap:16px;">
+    <div style="font-size:32px;">🤖</div>
+    <div>
+      <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:4px;">TikTok 自动采集</div>
+      <div style="font-size:12px;color:var(--text-3);">设置条件，自动搜索全球 TikTok KOC</div>
+    </div>
+    <div style="margin-left:auto;color:var(--text-3);font-size:18px;">›</div>
+  </div>
+</div>
+
+<!-- 返回按钮（子页面内显示） -->
+<div id="koc-mode-back" style="display:none;margin-bottom:16px;">
+  <button onclick="switchKocMode(null)" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:6px;padding:0;">‹ 返回筛选方式</button>
+</div>
+
+<!-- 子页面：手动录入 -->
+<div id="koc-sub-input" style="display:none;">
+<div id="panel-input">
+
+  <div class="card">
+    <div class="card-title">数据输入方式</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-show-form">✏️ 手动录入 KOC</button>
+      <button class="btn" id="btn-export-template">⬇️ 下载录入模板</button>
+      <label class="btn" style="cursor:pointer;">
+        📂 上传 KOC
+        <input type="file" id="csv-upload" accept=".csv,.xlsx,.xls" style="display:none">
+      </label>
+    </div>
+  </div>
+
+  <!-- Upload feedback -->
+  <div id="upload-feedback" style="display:none" class="card fade-in">
+    <div class="card-title">📋 CSV 预览</div>
+    <div class="csv-preview" id="csv-preview-table"></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btn-import-csv">导入数据</button>
+      <button class="btn" id="btn-cancel-csv">取消</button>
+    </div>
+  </div>
+
+  <!-- Manual form -->
+  <div id="manual-form" style="display:none" class="card fade-in">
+    <div class="card-title">新增 KOC · TikTok 校园招募表</div>
+    <div class="field-legend">
+      <span><span class="dot-req"></span> 必填字段</span>
+      <span><span class="dot-opt"></span> <span style="color:var(--brand)">橙色虚线 = 选填（有则填，提升评分精准度）</span></span>
+    </div>
+
+    <div class="form-grid">
+      <!-- 基础账号信息 -->
+      <div class="form-section-label">基础账号信息</div>
+
+      <div class="form-group">
+        <label>KOC 姓名 *</label>
+        <input id="f-name" placeholder="账号昵称 / 真实姓名">
+      </div>
+      <div class="form-group">
+        <label>账号名 (handle) *</label>
+        <input id="f-username" placeholder="@handle">
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>主页链接 *</label>
+        <input id="f-url" placeholder="https://tiktok.com/@...">
+      </div>
+      <div class="form-group">
+        <label>平台</label>
+        <select id="f-platform">
+          <option value="tiktok">TikTok</option>
+          <option value="instagram">Instagram</option>
+          <option value="youtube">YouTube</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>垂类 (Category)</label>
+        <select id="f-category">
+          <option value="">请选择</option>
+          <option value="Skin">Skin / Beauty</option>
+          <option value="Lifestyle">Lifestyle</option>
+          <option value="Dancer">Dancer / Entertainment</option>
+          <option value="Tech">Tech</option>
+          <option value="Campus">Campus Life</option>
+          <option value="Food">Food</option>
+          <option value="Fashion">Fashion</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>粉丝量级 (Tier)</label>
+        <select id="f-tier">
+          <option value="">请选择</option>
+          <option value="1k-5k">1K – 5K</option>
+          <option value="5k-10k">5K – 10K</option>
+          <option value="10k-30k">10K – 30K</option>
+          <option value="30k-100k">30K – 100K</option>
+          <option value="50k-100k">50K – 100K</option>
+          <option value="100k-300k">100K – 300K</option>
+          <option value="300k+">300K+</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>所在城市</label>
+        <select id="f-city">
+          <option value="">请选择</option>
+          <option value="Lagos">Lagos</option>
+          <option value="Ibadan">Ibadan</option>
+          <option value="Abuja">Abuja</option>
+          <option value="Nairobi">Nairobi</option>
+          <option value="Accra">Accra</option>
+          <option value="Cairo">Cairo</option>
+          <option value="Johannesburg">Johannesburg</option>
+          <option value="London">London</option>
+          <option value="Dubai">Dubai</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <!-- 合作执行信息 -->
+      <div class="form-section-label">合作执行信息</div>
+
+      <div class="form-group">
+        <label>KSP (核心卖点)</label>
+        <select id="f-ksp">
+          <option value="">请选择</option>
+          <option value="Appearance+Design">Appearance + Design</option>
+          <option value="One Tap AI">One Tap AI</option>
+          <option value="Fast Charging">Fast Charging</option>
+          <option value="Battery Life">Battery Life</option>
+          <option value="Camera">Camera</option>
+          <option value="Performance">Performance</option>
+          <option value="Price Value">Price / Value</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Script 已提供</label>
+        <select id="f-script">
+          <option value="">请选择</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>合作费用 (USD)</label>
+        <input id="f-collab-fee" type="number" placeholder="e.g. 400">
+      </div>
+      <div class="form-group">
+        <label>WhatsApp</label>
+        <input id="f-whatsapp" placeholder="+234...">
+      </div>
+      <div class="form-group optional" style="grid-column:1/-1;">
+        <label>备注</label>
+        <input id="f-risks" placeholder="其他补充信息">
+      </div>
+
+      <!-- 发布追踪（可后填） -->
+      <div class="form-section-label" style="color:var(--text-3);">发布追踪（可后填）</div>
+
+      <div class="form-group optional">
+        <label>发布日期</label>
+        <input id="f-post-date" type="date">
+      </div>
+      <div class="form-group optional" style="grid-column:2/4;">
+        <label>发布链接</label>
+        <input id="f-post-link" placeholder="https://...">
+      </div>
+      <div class="form-group optional">
+        <label>实际播放量</label>
+        <input id="f-act-views" type="number" placeholder="e.g. 50000">
+      </div>
+      <div class="form-group optional">
+        <label>实际互动量</label>
+        <input id="f-act-engagement" type="number" placeholder="e.g. 2000">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btn-add-koc">✅ 添加并评分</button>
+      <button class="btn" id="btn-cancel-form">取消</button>
+    </div>
+  </div>
+
+  <!-- KOC list preview -->
+  <div class="card">
+    <div class="card-title">
+      已录入 KOC
+      <span id="total-count" style="font-size:12px;background:var(--bg);padding:2px 8px;border-radius:20px;font-weight:400;color:var(--text-3);">0 条</span>
+    </div>
+    <div id="input-table-wrap">
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <h3>暂无 KOC 数据</h3>
+        <p>手动录入或上传 CSV 文件开始</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end koc-sub-input -->
+
+<!-- 子页面：TikTok 自动采集 -->
+<div id="koc-sub-crawl" style="display:none;">
+<div id="panel-crawl">
+  <h2 style="font-size:15px;font-weight:600;margin-bottom:4px;">TikTok 自动采集</h2>
+  <p style="font-size:12px;color:var(--text-3);margin-bottom:20px;">设置筛选条件 → 系统自动搜索符合条件的 TikTok 账号 → 进入筛选结果评分</p>
+
+  <!-- 第一步：筛选条件 -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+    <div style="font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+      <span style="background:var(--brand);color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;">1</span>
+      设置筛选条件
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+
+      <!-- 搜索关键词 -->
+      <div style="grid-column:1/-1;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">搜索关键词 <span style="color:var(--text-3);font-weight:400;">（系统将用这些词在 TikTok 搜索账号）</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;" id="kw-chips"></div>
+        <div style="display:flex;gap:6px;">
+          <input id="kw-input" placeholder="输入关键词，回车添加" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);">
+          <button class="btn btn-sm" onclick="addKw()">添加</button>
+        </div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:11px;color:var(--text-3);">快速添加：</span>
+          <span class="kw-suggest" onclick="addKw('campus life')">campus life</span>
+          <span class="kw-suggest" onclick="addKw('student tech review')">student tech review</span>
+          <span class="kw-suggest" onclick="addKw('smartphone unboxing')">smartphone unboxing</span>
+          <span class="kw-suggest" onclick="addKw('university vlog')">university vlog</span>
+          <span class="kw-suggest" onclick="addKw('tech lifestyle')">tech lifestyle</span>
+        </div>
+      </div>
+
+      <!-- 数据门槛 -->
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">最低粉丝量</div>
+        <input id="c-min-followers" type="number" value="5000" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">最低均播放量</div>
+        <input id="c-min-views" type="number" value="1000" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">最低互动率 (%)</div>
+        <input id="c-min-eng" type="number" value="3" step="0.5" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);">
+      </div>
+
+      <!-- 内容偏好 -->
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">内容垂类</div>
+        <select id="c-category" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);">
+          <option value="">不限</option>
+          <option value="tech">科技 / 数码</option>
+          <option value="campus">校园 / 学生</option>
+          <option value="lifestyle">生活方式</option>
+          <option value="mixed">混合</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">内容语言</div>
+        <select id="c-lang" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);">
+          <option value="">不限</option>
+          <option value="English">英语</option>
+          <option value="Yoruba">约鲁巴语</option>
+          <option value="mixed">混合</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">受众城市</div>
+        <select id="c-geo" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);">
+          <option value="">不限</option>
+          <optgroup label="🇳🇬 Nigeria">
+            <option value="Lagos">Lagos</option>
+            <option value="Abuja">Abuja</option>
+            <option value="Kano">Kano</option>
+            <option value="Ibadan">Ibadan</option>
+            <option value="Port Harcourt">Port Harcourt</option>
+            <option value="Benin City">Benin City</option>
+            <option value="Enugu">Enugu</option>
+          </optgroup>
+          <optgroup label="🇵🇰 Pakistan">
+            <option value="Lahore">Lahore</option>
+            <option value="Karachi">Karachi</option>
+            <option value="Islamabad">Islamabad</option>
+            <option value="Rawalpindi">Rawalpindi</option>
+            <option value="Faisalabad">Faisalabad</option>
+          </optgroup>
+          <optgroup label="🌍 Other">
+            <option value="Nairobi">Nairobi</option>
+            <option value="Accra">Accra</option>
+            <option value="Cairo">Cairo</option>
+            <option value="Dubai">Dubai</option>
+          </optgroup>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">覆盖率 ≥</div>
+        <select id="c-geo-rate" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);">
+          <option value="">不限</option>
+          <option value="10">10%</option>
+          <option value="30">30%</option>
+          <option value="50" selected>50%</option>
+          <option value="70">70%</option>
+        </select>
+      </div>
+
+      <!-- 采集数量 -->
+      <div style="grid-column:1/-1;display:flex;align-items:center;gap:16px;padding-top:8px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);">目标采集数量</div>
+        <select id="c-limit" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);">
+          <option value="10">10 个</option>
+          <option value="20" selected>20 个</option>
+          <option value="50">50 个</option>
+        </select>
+        <div style="font-size:11px;color:var(--text-3);">系统会搜索更多账号，按条件筛选后保留前 N 个</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第二步：采集方式 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+
+    <!-- 方式一：让 Claude 采集 -->
+    <div style="background:linear-gradient(135deg,#fff8f0,#fff3e0);border:1.5px solid var(--brand);border-radius:10px;padding:16px;position:relative;">
+      <div style="font-size:12px;font-weight:700;color:var(--brand);margin-bottom:4px;">🤖 方式一：让 Claude 帮你采集（推荐）</div>
+      <div style="font-size:11px;color:var(--text-2);margin-bottom:12px;line-height:1.6;">
+        TikTok 禁止网页直接调取数据（CORS 限制）。<br>
+        点击下方按钮生成采集指令，粘贴给 Claude，Claude 会直接帮你搜索并自动导入结果。
+      </div>
+      <button class="btn btn-primary" style="width:100%;font-weight:600;" onclick="copyClaudePrompt()">📋 生成并复制 Claude 采集指令</button>
+      <div id="claude-prompt-toast" style="display:none;margin-top:8px;font-size:11px;color:var(--pass);font-weight:600;">✅ 已复制！粘贴给 Claude 即可开始采集</div>
+    </div>
+
+    <!-- 方式二：粘贴用户名 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:4px;">📋 方式二：粘贴用户名导入</div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;line-height:1.6;">
+        在 TikTok 搜索后，把账号用户名粘贴进来（每行一个，不含 @），系统自动抓取资料并评分。
+      </div>
+      <textarea id="batch-usernames" rows="4" placeholder="例：&#10;adaeze_tech&#10;lagosgadgetgirl&#10;campusvibesng" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);resize:none;margin-bottom:8px;"></textarea>
+      <button class="btn" style="width:100%;font-weight:600;" onclick="startManualFetch()">📥 抓取并评分</button>
+    </div>
+
+  </div>
+  <div style="display:flex;justify-content:flex-end;">
+    <button class="btn btn-sm" style="background:var(--surface);color:var(--text-2);border:1px solid var(--border);" onclick="clearCrawl()">重置</button>
+  </div>
+
+  <!-- 进度条 -->
+  <div id="crawl-progress" style="display:none;margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:6px;">
+      <span id="crawl-status-text">正在搜索...</span>
+      <span id="crawl-count-text"></span>
+    </div>
+    <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+      <div id="crawl-bar" style="height:100%;width:0%;background:var(--brand);border-radius:3px;transition:width .3s;"></div>
+    </div>
+    <div id="crawl-errors" style="margin-top:6px;font-size:11px;color:#e74c3c;display:none;"></div>
+  </div>
+
+  <!-- 结果表格 -->
+  <div id="crawl-results-wrap" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-size:13px;font-weight:600;color:var(--text-1);">
+        采集结果 <span id="crawl-result-count" style="color:var(--brand);"></span>
+        <span id="crawl-filtered-note" style="font-size:11px;font-weight:400;color:var(--text-3);margin-left:8px;"></span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="selectAllCrawl(true)">全选</button>
+        <button class="btn btn-sm" style="background:var(--surface);color:var(--text-2);border:1px solid var(--border);" onclick="selectAllCrawl(false)">取消全选</button>
+        <button class="btn" onclick="importSelected()" style="background:var(--brand);">✅ 导入选中并评分</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px;">
+        <thead>
+          <tr style="background:var(--surface);text-align:left;">
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="crawl-check-all" onchange="selectAllCrawl(this.checked)"></th>
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border);">账号</th>
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border);">粉丝量<br><span id="th-followers" style="font-weight:400;color:var(--text-3);"></span></th>
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border);">均播放（估）<br><span id="th-views" style="font-weight:400;color:var(--text-3);"></span></th>
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border);">总获赞</th>
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border);">视频数</th>
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border);">地区</th>
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border);">简介</th>
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border);">是否达标</th>
+          </tr>
+        </thead>
+        <tbody id="crawl-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="crawl-tip" style="text-align:center;padding:40px 20px;color:var(--text-3);font-size:13px;">
+    <div style="font-size:36px;margin-bottom:12px;">🎯</div>
+    <div style="font-weight:600;color:var(--text-2);margin-bottom:6px;">填写筛选条件，一键自动采集</div>
+    <div style="font-size:11px;">系统将根据关键词搜索 TikTok，自动过滤不达标账号，符合条件的直接进入评分</div>
+  </div>
+
+</div>
+</div><!-- end koc-sub-crawl -->
+
+</div><!-- end panel-koc -->
+
+<!-- =================== PANEL 2: 筛选结果 =================== -->
+<div class="panel" id="panel-screening">
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-label">总计</div><div class="stat-value" id="s-total">0</div><div class="stat-sub">KOC</div></div>
+    <div class="stat-card"><div class="stat-label">通过初筛</div><div class="stat-value" id="s-pass" style="color:var(--pass)">0</div><div class="stat-sub">建议入库</div></div>
+    <div class="stat-card"><div class="stat-label">风险标记</div><div class="stat-value" id="s-risk" style="color:var(--risk)">0</div><div class="stat-sub">需人工复核</div></div>
+    <div class="stat-card"><div class="stat-label">不通过</div><div class="stat-value" id="s-fail" style="color:var(--fail)">0</div><div class="stat-sub">不建议入库</div></div>
+    <div class="stat-card"><div class="stat-label">平均评分</div><div class="stat-value" id="s-avg-score">-</div><div class="stat-sub">满分 100</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <select id="filter-status" onchange="renderScreening()">
+      <option value="">全部状态</option>
+      <option value="pass">通过</option>
+      <option value="risk">风险</option>
+      <option value="fail">不通过</option>
+    </select>
+    <select id="filter-platform" onchange="renderScreening()">
+      <option value="">全部平台</option>
+      <option value="tiktok">TikTok</option>
+      <option value="instagram">Instagram</option>
+    </select>
+    <input id="filter-search" placeholder="搜索账号名..." style="min-width:160px;" oninput="renderScreening()">
+    <button class="btn btn-sm" onclick="exportCSV()">⬇️ 导出结果</button>
+    <button class="btn btn-sm" onclick="generateAllBriefs()">📝 生成所有 Brief</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="screening-table">
+      <thead>
+        <tr>
+          <th>姓名 / 账号</th>
+          <th>联系方式</th>
+          <th>标签</th>
+          <th>城市 / 学校</th>
+          <th>粉丝量</th>
+          <th>均播放</th>
+          <th>互动率</th>
+          <th>本地受众</th>
+          <th>垂类</th>
+          <th>品牌契合</th>
+          <th>真实性</th>
+          <th>综合评分</th>
+          <th>入库等级</th>
+          <th>风险</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="screening-tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="screening-empty" class="empty-state" style="display:none;">
+    <div class="icon">🔍</div>
+    <h3>暂无筛选数据</h3>
+    <p>请先在「数据录入」面板添加 KOC</p>
+  </div>
+
+</div>
+
+<!-- =================== PANEL 3: 合作 Brief =================== -->
+<div class="panel" id="panel-brief">
+  <!-- Step 1: Brief 模板上传区 -->
+  <div style="margin-bottom:24px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div style="width:26px;height:26px;border-radius:50%;background:var(--brand);color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">1</div>
+      <h2 style="font-size:15px;font-weight:600;">上传合作 Brief 模板</h2>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px;">产品名称</div>
+          <input id="brief-product" placeholder="e.g. Infinix Hot 70" value="Infinix Hot 70" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px;">核心卖点</div>
+          <input id="brief-ksp" placeholder="e.g. 颜值设计 + 45W 快充" value="颜值设计 + 45W 超级快充" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px;">目标人群</div>
+          <input id="brief-audience" placeholder="e.g. 拉各斯在校大学生 18-25岁" value="Lagos & Ibadan 在校大学生，18–25 岁" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px;">官方售价</div>
+          <input id="brief-price" placeholder="e.g. ₦189,700" value="₦189,700" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px;">合作形式</div>
+          <input id="brief-collab" placeholder="e.g. 免费寄样留用" value="免费寄送 Infinix Hot 70 一台（留用）" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px;">投流预警播放量</div>
+          <input id="brief-boost-threshold" type="number" placeholder="20000" value="20000" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);">
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px;">内容要求 / 脚本方向（AI 将基于此为每位 KOC 定制脚本）</div>
+        <textarea id="brief-content-req" rows="4" placeholder="描述视频必须传达的核心信息、竞品对比策略、禁止事项等..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);resize:vertical;line-height:1.6;">• 外观颜值 — 拿出来有面子，设计好看，上镜
+• 45W 快充对比 — Hot 70 充满只需 20 分钟，市面同价位手机需 1 小时（18W 水平）
+• 竞品策略：不提竞品品牌名，只用数字对比
+• 必须标注：@infinixnigeria · #BeSeenBeHot · #infinixhot70series
+• 避免：提及竞品品牌名、纯念稿广告感</textarea>
+      </div>
+      <div style="text-align:right;">
+        <button class="btn btn-primary" onclick="saveBriefTemplate();showToast('✅ Brief 模板已保存，前往③筛选结果生成各博主定制脚本')">保存 Brief 模板</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: KOC 定制脚本区 -->
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--brand);color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">2</div>
+        <h2 style="font-size:15px;font-weight:600;">KOC 定制脚本</h2>
+        <span style="font-size:12px;color:var(--text-3);">在③筛选结果中点击「Brief」自动生成</span>
+      </div>
+      <button class="btn btn-sm" onclick="exportBriefs()">⬇️ 导出所有 Brief</button>
+    </div>
+    <div id="brief-container">
+      <div class="empty-state">
+        <div class="icon">🤖</div>
+        <h3>请先保存 Brief 模板</h3>
+        <p>填写上方模板后，前往「③ 筛选结果」为每位 KOC 生成定制脚本</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- =================== PANEL 4: KOC Tracking List =================== -->
+<div class="panel" id="panel-tracking">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+    <h2 style="font-size:15px;font-weight:600;">KOC Tracking List</h2>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm" onclick="exportTrackingCSV()">⬇️ 导出 CSV</button>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="overflow-x:auto;">
+    <table id="tracking-table" style="min-width:1600px;">
+      <thead>
+        <tr>
+          <th style="width:36px;">#</th>
+          <th>Category</th>
+          <th>KOC</th>
+          <th>Platforms</th>
+          <th>Profile Link</th>
+          <th>Tier</th>
+          <th>KSP</th>
+          <th>Script</th>
+          <th>Post Date</th>
+          <th>Post Link</th>
+          <th>Collaboration Fee (USD)</th>
+          <th>Act. Views</th>
+          <th>Act. Engagement</th>
+          <th>收货地址</th>
+          <th>是否有过品牌合作</th>
+          <th>是否同时运营 Instagram</th>
+          <th>招募渠道来源</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="tracking-tbody"></tbody>
+    </table>
+  </div>
+  <div id="tracking-empty" class="empty-state">
+    <div class="icon">📋</div>
+    <h3>暂无追踪数据</h3>
+    <p>在「筛选结果」中点击「加入 Tracking」将通过的 KOC 添加到此列表</p>
+  </div>
+
+  <!-- 视频监测 -->
+  <div style="margin-top:32px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <h2 style="font-size:15px;font-weight:600;">📹 合作视频监测</h2>
+      <span style="font-size:12px;color:var(--text-3);">手动录入数据 · 播放量达 2 万自动预警</span>
+    </div>
+    <div id="video-monitor-container">
+      <p style="color:var(--text-3);font-size:13px;">先在筛选结果中将 KOC 加入 Tracking</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- end app-body -->
+
+<!-- Detail modal -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-title">
+      KOC 详情
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// =================== SUPABASE ===================
+const _SB = window.supabase.createClient(
+  'https://twsgeckovdplcbgrjjne.supabase.co',
+  'sb_publishable_bBp_10JShxmiYvYxHrTKTQ_n7yh4gzd'
+);
+
+function _kocToRow(k) {
+  return {
+    platform: k.platform, name: k.name, username: k.username, url: k.url,
+    city: k.city, whatsapp: k.whatsapp, tier: k.tier, category: k.category,
+    ksp: k.ksp||'', script: k.script||'', collab_fee: k.collabFee||0,
+    post_date: k.postDate||'', post_link: k.postLink||'',
+    act_views: k.actViews||0, act_engagement: k.actEngagement||0,
+    followers: k.followers, avg_views: k.avgViews, engagement_rate: k.engagementRate,
+    bio: k.bio, region: k.region, geo_label: k.geoLabel, language: k.language,
+    source_type: k.source_type, score: k.score, status: k.status, verdict: k.verdict,
+    has_tech_content: k.hasTechContent,
+    manual_risks: Array.isArray(k.manualRisks) ? k.manualRisks.join(',') : '',
+    added_at: k.addedAt,
+  };
+}
+
+function _rowToKoc(r) {
+  return {
+    id: r.id, platform: r.platform, name: r.name, username: r.username, url: r.url,
+    city: r.city||'', whatsapp: r.whatsapp||'', tier: r.tier, category: r.category,
+    ksp: r.ksp||'', script: r.script||'', collabFee: r.collab_fee||0,
+    postDate: r.post_date||'', postLink: r.post_link||'',
+    actViews: r.act_views||0, actEngagement: r.act_engagement||0,
+    followers: r.followers, avgViews: r.avg_views, engagementRate: r.engagement_rate,
+    bio: r.bio||'', region: r.region||'', geoLabel: r.geo_label||'', language: r.language||'',
+    source_type: r.source_type||'crawl', score: r.score, status: r.status, verdict: r.verdict,
+    hasTechContent: r.has_tech_content||'',
+    manualRisks: r.manual_risks ? r.manual_risks.split(',').filter(Boolean) : [],
+    addedAt: r.added_at||r.created_at,
+  };
+}
+
+async function _sbSave(koc) {
+  const { error } = await _SB.from('koc_list').insert(_kocToRow(koc));
+  if (error) console.error('Supabase insert error:', error);
+}
+
+async function _sbUpdate(id, fields) {
+  const row = {};
+  if (fields.collabFee !== undefined) row.collab_fee = fields.collabFee;
+  if (fields.postDate !== undefined) row.post_date = fields.postDate;
+  if (fields.postLink !== undefined) row.post_link = fields.postLink;
+  if (fields.actViews !== undefined) row.act_views = fields.actViews;
+  if (fields.actEngagement !== undefined) row.act_engagement = fields.actEngagement;
+  if (fields.ksp !== undefined) row.ksp = fields.ksp;
+  if (fields.script !== undefined) row.script = fields.script;
+  if (Object.keys(row).length) await _SB.from('koc_list').update(row).eq('id', id);
+}
+
+// =================== DATA STORE ===================
+function _initKocData() {
+  const raw = [
+    { username:'panafricanlifestyle', name:'Pan African Lifestyle', followers:232800, likes:2800000, videos:1315, bio:'The Leading Pan-African Multimedia Company & Lifestyle Agency.', region:'NG' },
+    { username:'nigeriansindiaspora', name:'NIGERIANS IN DIASPORA', followers:202100, likes:818700, videos:273, bio:'Nigerian diaspora community content.', region:'NG' },
+    { username:'nigeria_diaspora_service', name:'NIGERIA DIASPORA SERVICES', followers:82900, likes:179400, videos:57, bio:'Nigerian Community Association. Diaspora services and media.', region:'NG' },
+    { username:'zbcstudios.ng', name:'Zbc Studios Nigeria', followers:59800, likes:407800, videos:34, bio:'Nigerian youth entertainment and music studio.', region:'NG' },
+    { username:'nigeria.student.am', name:'Nigeria Student Ambassador', followers:45200, likes:68400, videos:148, bio:'I am passionate about empowering your mind.', region:'NG' },
+    { username:'techwhiz.africa', name:'TechWhiz Africa', followers:34000, likes:169100, videos:54, bio:'TikTok tips, Tech tips and tricks.', region:'NG' },
+    { username:'skylineuniversitynigeria', name:'Skyline University Nigeria', followers:33900, likes:185300, videos:255, bio:'The Official Page for Skyline University Nigeria.', region:'NG' },
+    { username:'wearetechafrica', name:'We are Tech Africa', followers:20500, likes:70600, videos:409, bio:'Impact de la technologie en Afrique.', region:'NG' },
+    { username:'nile_uni', name:'Nile University of Nigeria', followers:14800, likes:240300, videos:75, bio:'Official TikTok of Nile University of Nigeria.', region:'NG' },
+    { username:'uzaircampuslife', name:'Uzair Campus Life', followers:11900, likes:94000, videos:19, bio:'Living the student life. College Vlogs. Smile Create Repeat.', region:'NG' },
+    { username:'hireeast.ng', name:'Nigeria No1 Talent-Job Hub', followers:11500, likes:50200, videos:586, bio:'Nigeria talent and job hub for students.', region:'NG' },
+    { username:'africanstudents.net', name:'African Students Community', followers:11000, likes:38000, videos:125, bio:'Be informed. Be empowered. African student community.', region:'NG' },
+    { username:'nigerianarmyuniversity', name:'Nigerian Army University Biu', followers:9969, likes:48100, videos:110, bio:'Student Entertainment Body of Nigeria Army University.', region:'NG' },
+    { username:'goodbess8', name:'University of Nigeria NSK', followers:9075, likes:64400, videos:315, bio:'University of Nigeria Nsukka (UNN) community page.', region:'NG' },
+    { username:'universnigerian', name:'NOLLYWOOD UNIVERS', followers:8957, likes:41700, videos:27, bio:'Nollywood content for Nigerian audiences.', region:'NG' },
+    { username:'fgcyouthng', name:'Foursquare Youth Nigeria', followers:6167, likes:88000, videos:154, bio:'National Youth Wing of the Foursquare Gospel Church in Nigeria.', region:'NG' },
+    { username:'nigerian_studentincanada', name:'Nigerian Student in Canada', followers:5245, likes:27700, videos:194, bio:'Exploring Canada as a Nigerian student.', region:'CA' },
+    { username:'elite_tech_africa', name:'ELITE TECH AFRICA', followers:5001, likes:8839, videos:100, bio:'Installation and Tech Security. Cotonou, Benin.', region:'BJ' },
+    { username:'cuchapel', name:'Covenant University Chapel', followers:33900, likes:925500, videos:280, bio:'Covenant University Chapel - faith, community and campus life in Nigeria.', region:'NG' },
+    { username:'unitednigerianyouths', name:'United Nigerian Youth (U.N.Y)', followers:26000, likes:90200, videos:120, bio:'Nigerian non-partisan youth org. for promoting unity, peace and patriotism.', region:'NG' },
+  ];
+  const now = new Date().toISOString();
+  return raw.map(acc => {
+    let score = 50;
+    if (acc.followers >= 100000) score += 25;
+    else if (acc.followers >= 30000) score += 20;
+    else if (acc.followers >= 10000) score += 15;
+    else if (acc.followers >= 5000) score += 10;
+    if (acc.region === 'NG') score += 10;
+    if (/student|campus|university/i.test(acc.bio)) score += 5;
+    const status = score >= 70 ? 'pass' : score >= 55 ? 'risk' : 'fail';
+    const verdict = status === 'pass' ? '建议合作' : status === 'risk' ? '需人工复核' : '暂不推荐';
+    const tier = acc.followers >= 100000 ? '100k-300k' : acc.followers >= 30000 ? '30k-100k' : acc.followers >= 10000 ? '10k-30k' : acc.followers >= 5000 ? '5k-10k' : '1k-5k';
+    return {
+      id: Date.now() + Math.random(), platform: 'tiktok',
+      name: acc.name, username: acc.username,
+      url: 'https://www.tiktok.com/@' + acc.username,
+      city: 'Lagos', whatsapp: '', tier, category: 'campus/Nigeria',
+      followers: acc.followers,
+      avgViews: Math.round(acc.likes / (acc.videos || 1)),
+      engagementRate: parseFloat(((acc.likes / (acc.videos || 1)) / acc.followers * 100).toFixed(2)),
+      bio: acc.bio, region: acc.region, geoLabel: acc.region,
+      language: acc.region === 'NG' ? 'English' : 'Multi',
+      source_type: 'crawl', manualRisks: [],
+      score, status, verdict,
+      hasTechContent: /tech/i.test(acc.bio) ? 'yes' : 'no',
+      addedAt: now,
+    };
+  });
+}
+function _initKocDataLahoreSteak() {
+  const raw = [
+    { username:'lahorefoodposting', name:'LFP - Lahore Food Posting', followers:393400, likes:12700000, videos:320, bio:'Instagram: @lahorefoodposting', region:'PK' },
+    { username:'the_restaurant_girl_', name:'The Restaurant Girl', followers:623200, likes:12400000, videos:280, bio:'Certified Chef. Highfield Level 2 Award in Food safety. Rawalpindi.', region:'PK' },
+    { username:'vicky.pandaa', name:'vicky panda', followers:304800, likes:12900000, videos:350, bio:'Winner Of TikTok Ultimate Food Battle 2025. Food Vibes | Honest Reviews | Real Taste.', region:'PK' },
+    { username:'butt.eats', name:'butt.eats', followers:383200, likes:10500000, videos:290, bio:"Instagram: butt.eats. 'One Bite'.", region:'PK' },
+    { username:'food_exploration_umair', name:'Food exploration with umair', followers:252500, likes:8100000, videos:260, bio:'DM for collaboration. Islamabad/Rawalpindi.', region:'PK' },
+    { username:'ibrarsaimfoodies', name:'Ibrar & Saim Foodies', followers:206700, likes:7200000, videos:310, bio:'For Promotion & Business Queries contact Instagram @ibrarrmalik.', region:'PK' },
+    { username:'noorkhalid.11', name:'Noor Khalid', followers:155100, likes:4200000, videos:200, bio:'Instagram: noorkhalid.11. Follow for more videos & stories.', region:'PK' },
+    { username:'triptuck', name:'Trip Tuck', followers:73100, likes:1800000, videos:180, bio:'Jithay Roti Othay Esi.', region:'PK' },
+    { username:'fahad.chaudhary569', name:'Fahad Chaudhary', followers:36200, likes:1600000, videos:220, bio:'The Helal Vlogger. Food, Fashion, Travel. Clinical Dietitian.', region:'PK' },
+    { username:'mahinmade_', name:'Mahin', followers:25500, likes:509100, videos:150, bio:'food, travel, and some bakwas. third culture gal.', region:'PK' },
+    { username:'steak_studio', name:'Steak Studio', followers:21800, likes:23800, videos:60, bio:'Café & Restaurant.', region:'PK' },
+    { username:'lahorefoodlovers', name:'Lahore Food Lovers', followers:24800, likes:661600, videos:200, bio:'Lahore food lovers community.', region:'PK' },
+    { username:'lahorecakeshop', name:'Lahore Cakes Shop', followers:20500, likes:456000, videos:180, bio:'Lahore cakes and desserts.', region:'PK' },
+    { username:'itseman389', name:'itseman389', followers:6630, likes:378100, videos:120, bio:'Enjoy aesthetic life with Mano.', region:'PK' },
+    { username:'.lahorebakes', name:'Lahore.bakes', followers:3702, likes:79400, videos:90, bio:'Lahore bakes and pastries.', region:'PK' },
+    { username:'ahmed.smalik', name:'Ahmed Malik', followers:2127, likes:72300, videos:80, bio:'IG: ahmed_malik00. YouTube: ahmedmalik_00.', region:'PK' },
+    { username:'tayyab_eats', name:'Struggler Tayyab', followers:2041, likes:103000, videos:95, bio:'Mini fooding vlogs.', region:'PK' },
+    { username:'zeebites.pov', name:'zeebites.pov', followers:1806, likes:47500, videos:70, bio:'No table, just vibes. My car runs on petrol & burgers. Lahore.', region:'PK' },
+    { username:'muhammad.hassan1161', name:'mhassanvlogs', followers:945, likes:44700, videos:60, bio:'Fitness, Food, Everyday Life. Lahore.', region:'PK' },
+    { username:'steakbox.pakistan', name:'Steak Box', followers:411, likes:6790, videos:30, bio:'Premium and affordable Steak House in Lahore. MM Alam Road.', region:'PK' },
+  ];
+  const now = new Date().toISOString();
+  return raw.map(acc => {
+    let score = 50;
+    if (acc.followers >= 100000) score += 25;
+    else if (acc.followers >= 30000) score += 20;
+    else if (acc.followers >= 10000) score += 15;
+    else if (acc.followers >= 5000) score += 10;
+    else if (acc.followers >= 300) score += 5;
+    if (acc.region === 'PK') score += 8;
+    if (/food|steak|eat|restaurant/i.test(acc.bio)) score += 5;
+    const status = score >= 70 ? 'pass' : score >= 55 ? 'risk' : 'fail';
+    const verdict = status === 'pass' ? '建议合作' : status === 'risk' ? '需人工复核' : '暂不推荐';
+    const tier = acc.followers >= 300000 ? '300k+' : acc.followers >= 100000 ? '100k-300k' : acc.followers >= 30000 ? '30k-100k' : acc.followers >= 10000 ? '10k-30k' : acc.followers >= 5000 ? '5k-10k' : acc.followers >= 1000 ? '1k-5k' : '1k-5k';
+    return {
+      id: Date.now() + Math.random(), platform: 'tiktok',
+      name: acc.name, username: acc.username,
+      url: 'https://www.tiktok.com/@' + acc.username,
+      city: 'Lahore', whatsapp: '', tier, category: 'lahore/steak',
+      followers: acc.followers,
+      avgViews: Math.round(acc.likes / (acc.videos || 1)),
+      engagementRate: parseFloat(((acc.likes / (acc.videos || 1)) / acc.followers * 100).toFixed(2)),
+      bio: acc.bio, region: acc.region, geoLabel: acc.region,
+      language: 'Urdu/English',
+      source_type: 'crawl', manualRisks: [],
+      score, status, verdict,
+      hasTechContent: 'no',
+      addedAt: now,
+    };
+  });
+}
+let kocData = [];
+let trackingList = [];
+let briefs = {};
+let currentPlatform = 'tiktok';
+
+async function initApp() {
+  const loadingEl = document.createElement('div');
+  loadingEl.id = 'db-loading';
+  loadingEl.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;font-size:16px;color:#666;';
+  loadingEl.textContent = '正在加载数据库数据…';
+  document.body.appendChild(loadingEl);
+
+  const { data, error } = await _SB.from('koc_list').select('*').order('created_at', { ascending: true });
+  if (error) {
+    console.error('Supabase load error:', error);
+    loadingEl.textContent = '数据库连接失败，使用本地数据';
+    setTimeout(() => loadingEl.remove(), 2000);
+    kocData = [..._initKocData(), ..._initKocDataLahoreSteak()];
+    renderInputTable();
+    return;
+  }
+
+  if (data && data.length > 0) {
+    kocData = data.map(_rowToKoc);
+  } else {
+    // 首次使用：把40条预置数据写入数据库
+    const seed = [..._initKocData(), ..._initKocDataLahoreSteak()];
+    const rows = seed.map(_kocToRow);
+    const { error: seedErr } = await _SB.from('koc_list').insert(rows);
+    if (seedErr) console.error('Seed error:', seedErr);
+    const { data: seeded } = await _SB.from('koc_list').select('*').order('created_at', { ascending: true });
+    kocData = seeded ? seeded.map(_rowToKoc) : seed;
+  }
+
+  loadingEl.remove();
+  renderInputTable();
+  // Default to Brief tab as first view
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="panel-brief"]').classList.add('active');
+  document.getElementById('panel-brief').classList.add('active');
+  renderBriefs();
+}
+let parsedCSV = null;
+
+const TIER_FOLLOWERS = {
+  '1k-5k': 3000,
+  '5k-10k': 7500,
+  '10k-30k': 20000,
+  '30k-100k': 65000,
+  '50k-100k': 75000,
+  '100k-300k': 200000,
+  '300k+': 500000
+};
+const TRACKING_TEMPLATE_HEADERS = [
+  '#',
+  'Category',
+  'KOC',
+  'Platforms',
+  'Profile Link',
+  'Tier',
+  'KSP',
+  'Script',
+  'Post Date',
+  'Post Link',
+  'Collaboration Fee (USD)',
+  'Act. Views',
+  'Act. Engagement',
+  'Shipping Address',
+  'Brand Collab?',
+  'Instagram?',
+  'Recruitment Source',
+  'Content Brand Fit',
+  'Target Audience Overlap',
+  'Nigeria Local Audience %',
+  'Account Authenticity',
+  'KOL Type Grade',
+  'Collab Reputation',
+  'Output Stability',
+  'Competitor Conflict',
+  'Remark / Not-in Reason'
+];
+const TRACKING_TEMPLATE_EXAMPLE = [
+  '1',
+  'Skin',
+  'Chinnybaby042',
+  'Tiktok',
+  'https://www.tiktok.com/@chinnybaby042',
+  '50k-100k',
+  'Appearance+design',
+  'Yes',
+  '2026/06/14',
+  'https://vt.tiktok.com/',
+  '400',
+  '',
+  '',
+  'Dormitory Building A / Room 305',
+  'Yes',
+  'Yes',
+  'Referral',
+  '9',
+  '8',
+  '70',
+  '8',
+  'A',
+  '8',
+  '8',
+  'No',
+  ''
+];
+
+// =================== NAVIGATION ===================
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.panel).classList.add('active');
+    if (tab.dataset.panel === 'panel-screening') renderScreening();
+    if (tab.dataset.panel === 'panel-brief') renderBriefs();
+    if (tab.dataset.panel === 'panel-tracking') renderTracking();
+  });
+});
+
+// =================== KOC MODE SWITCHER ===================
+function switchKocMode(mode) {
+  const subInput = document.getElementById('koc-sub-input');
+  const subCrawl = document.getElementById('koc-sub-crawl');
+  const modeSelect = document.getElementById('koc-mode-select');
+  const backBtn = document.getElementById('koc-mode-back');
+  const cardInput = document.getElementById('mode-card-input');
+  const cardCrawl = document.getElementById('mode-card-crawl');
+
+  if (!mode) {
+    // back to selector
+    modeSelect.style.display = 'grid';
+    backBtn.style.display = 'none';
+    subInput.style.display = 'none';
+    subCrawl.style.display = 'none';
+    return;
+  }
+  modeSelect.style.display = 'none';
+  backBtn.style.display = 'block';
+  if (mode === 'input') {
+    subInput.style.display = 'block';
+    subCrawl.style.display = 'none';
+  } else {
+    subInput.style.display = 'none';
+    subCrawl.style.display = 'block';
+  }
+}
+
+// platform switch kept as stub for CSV import compat
+function switchPlatform(p) { currentPlatform = p; }
+
+// =================== FORM TOGGLE ===================
+document.getElementById('btn-show-form').onclick = () => {
+  document.getElementById('manual-form').style.display = '';
+  document.getElementById('manual-form').classList.add('fade-in');
+};
+document.getElementById('btn-cancel-form').onclick = () => {
+  document.getElementById('manual-form').style.display = 'none';
+};
+
+// =================== SCORING ENGINE ===================
+function getRules() {
+  return {
+    tt: {
+      followers: +document.getElementById('rule-tt-followers').value || 5000,
+      views: +document.getElementById('rule-tt-views').value || 1000,
+      engagement: +document.getElementById('rule-tt-engagement').value || 3,
+      geo: +document.getElementById('rule-tt-geo').value || 20,
+    },
+    ig: {
+      followers: +document.getElementById('rule-ig-followers').value || 3000,
+      engagement: +document.getElementById('rule-ig-engagement').value || 3,
+      reels: +document.getElementById('rule-ig-reels').value || 500,
+      geo: +document.getElementById('rule-ig-geo').value || 20,
+    }
+  };
+}
+
+function scoreKOC(koc) {
+  const risks = [...(koc.manualRisks || [])];
+  const failReasons = [];
+  const avgViews = koc.avgViews || koc.reelsAvg || koc.actViews || 0;
+  const engRate = koc.engagementRate || 0;
+  const localAudience = getLocalAudienceScore(koc);
+
+  const scoring = {
+    contentBrandFit: metricScore(koc.contentBrandFit, inferContentBrandFit(koc)),
+    targetAudienceOverlap: metricScore(koc.targetAudienceOverlap, inferTargetAudienceOverlap(koc)),
+    nigeriaLocalAudience: metricScore(koc.nigeriaLocalAudience, localAudience),
+    accountAuthenticity: metricScore(koc.accountAuthenticity, inferAccountAuthenticity(koc, avgViews, engRate)),
+    kolTypeGrade: metricScore(koc.kolTypeGrade, inferKOLTypeGrade(koc)),
+    collabReputation: metricScore(koc.collabReputation, inferCollabReputation(koc)),
+    outputStability: metricScore(koc.outputStability, inferOutputStability(koc, avgViews)),
+    competitorConflict: metricScore(koc.competitorConflict, inferCompetitorConflict(koc))
+  };
+
+  const weights = {
+    contentBrandFit: 15,
+    targetAudienceOverlap: 15,
+    nigeriaLocalAudience: 15,
+    accountAuthenticity: 15,
+    kolTypeGrade: 10,
+    collabReputation: 10,
+    outputStability: 10,
+    competitorConflict: 10
+  };
+
+  let score = Object.keys(weights).reduce((sum, key) => {
+    return sum + scoring[key] / 10 * weights[key];
+  }, 0);
+
+  if (koc.followers > 10000 && avgViews > 0 && avgViews < 500) risks.push('疑似买粉（高粉低播）');
+  if (engRate > 0 && engRate < 1) risks.push('互动数据异常低');
+  if (scoring.accountAuthenticity <= 3) failReasons.push('账号真实性低');
+  if (scoring.competitorConflict <= 3) failReasons.push('竞品绑定 / 独家冲突');
+  if (scoring.targetAudienceOverlap <= 3) failReasons.push('受众不匹配');
+  if (String(koc.remark || '').trim()) risks.push(koc.remark.trim());
+
+  score = Math.round(Math.min(100, Math.max(0, score)));
+
+  let entryGrade, verdict, status;
+  if (failReasons.length || score < 50) {
+    entryGrade = '不入库';
+    verdict = '不入库';
+    status = 'fail';
+    if (!failReasons.length) failReasons.push('综合评分低于 50');
+  } else if (score >= 80 && risks.length === 0) {
+    entryGrade = 'A';
+    verdict = 'A 级 · 优先合作';
+    status = 'pass';
+  } else if (score >= 65) {
+    entryGrade = 'B';
+    verdict = 'B 级 · 观察合作';
+    status = risks.length ? 'risk' : 'pass';
+  } else {
+    entryGrade = 'C';
+    verdict = 'C 级 · 备用池';
+    status = 'risk';
+  }
+
+  return { score, verdict, status, failReasons, risks, scoring, entryGrade };
+}
+
+function metricScore(value, fallback) {
+  if (value == null || String(value).trim() === '') return clampScore(fallback);
+  const raw = String(value).trim().toLowerCase();
+  const gradeMap = { a: 10, b: 7, c: 5, d: 2, high: 9, medium: 6, low: 3, yes: 8, no: 2, none: 10 };
+  if (gradeMap[raw] != null) return gradeMap[raw];
+  const num = parseFloat(raw.replace('%', ''));
+  if (Number.isFinite(num)) return clampScore(num > 10 ? num / 10 : num);
+  return clampScore(fallback);
+}
+
+function clampScore(n) {
+  return Math.min(10, Math.max(0, Number.isFinite(n) ? n : 5));
+}
+
+function getLocalAudienceScore(koc) {
+  const pct = Number(koc.nigeriaLocalAudience || 0) || (Number(koc.lagosAudience || 0) + Number(koc.ibadanAudience || 0));
+  if (pct >= 70) return 10;
+  if (pct >= 50) return 8;
+  if (pct >= 30) return 6;
+  if (pct >= 15) return 4;
+  return 2;
+}
+
+function inferContentBrandFit(koc) {
+  const cat = String(koc.category || '').toLowerCase();
+  const ksp = String(koc.ksp || '').toLowerCase();
+  if (/(skin|beauty|tech|campus|lifestyle|fashion)/.test(cat) || /(appearance|design|camera|battery|phone|tech)/.test(ksp)) return 8;
+  if (/(food|sports|entertainment|dancer)/.test(cat)) return 6;
+  return 5;
+}
+
+function inferTargetAudienceOverlap(koc) {
+  const cat = String(koc.category || '').toLowerCase();
+  const age = String(koc.audienceAge || '').toLowerCase();
+  if (age.includes('18-24') || /(campus|skin|beauty|lifestyle|fashion|tech)/.test(cat)) return 8;
+  return 5;
+}
+
+function inferAccountAuthenticity(koc, avgViews, engRate) {
+  if (koc.followers > 10000 && avgViews > 0 && avgViews < 500) return 3;
+  if (engRate > 0 && engRate < 1) return 3;
+  if (avgViews > 0 || engRate > 0) return 7;
+  return 5;
+}
+
+function inferKOLTypeGrade(koc) {
+  const tier = normalizeTier(koc.tier);
+  if (['10k-30k', '30k-100k', '50k-100k'].includes(tier)) return 9;
+  if (['5k-10k', '100k-300k'].includes(tier)) return 7;
+  if (tier === '300k+') return 6;
+  return 5;
+}
+
+function inferCollabReputation(koc) {
+  const brandCollab = String(koc.brandCollaboration || koc.brandExp || '').toLowerCase();
+  if (brandCollab === 'yes' || brandCollab === '是' || Number(koc.collabFee || 0) > 0) return 8;
+  return 5;
+}
+
+function inferOutputStability(koc, avgViews) {
+  const frequency = String(koc.frequency || '').toLowerCase();
+  if (frequency.includes('3-5') || frequency.includes('daily')) return 9;
+  if (frequency.includes('1-2') || avgViews > 0) return 7;
+  if (frequency.includes('irregular')) return 3;
+  return 5;
+}
+
+function inferCompetitorConflict(koc) {
+  const value = String(koc.competitorConflict || '').toLowerCase();
+  if (/(yes|有|冲突|绑定)/.test(value)) return 2;
+  return 10;
+}
+
+// =================== ADD KOC ===================
+document.getElementById('btn-add-koc').onclick = () => {
+  const username = document.getElementById('f-username').value.trim();
+  if (!username) { alert('请填写账号名'); return; }
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('请填写 KOC 姓名'); return; }
+  const url = document.getElementById('f-url').value.trim();
+  if (!url) { alert('请填写主页链接'); return; }
+
+  const tier = document.getElementById('f-tier').value;
+
+  let koc = {
+    id: Date.now(),
+    platform: document.getElementById('f-platform').value || 'tiktok',
+    name, username, url,
+    city: document.getElementById('f-city').value,
+    whatsapp: document.getElementById('f-whatsapp').value.trim(),
+    tier,
+    category: document.getElementById('f-category').value,
+    ksp: document.getElementById('f-ksp').value,
+    script: document.getElementById('f-script').value,
+    collabFee: +document.getElementById('f-collab-fee').value || 0,
+    postDate: document.getElementById('f-post-date').value,
+    postLink: document.getElementById('f-post-link').value.trim(),
+    actViews: +document.getElementById('f-act-views').value || 0,
+    actEngagement: +document.getElementById('f-act-engagement').value || 0,
+    manualRisks: (document.getElementById('f-risks').value||'').split(',').map(s=>s.trim()).filter(Boolean),
+    followers: TIER_FOLLOWERS[tier] || 0,
+    avgViews: 0, engagementRate: 0,
+    growthTrend: '', frequency: '', accountAge: '',
+    language: '', audienceAge: '', geoLabel: '',
+    hasTechContent: '',
+    source_type: 'manual',
+    addedAt: new Date().toISOString(),
+  };
+
+  const result = scoreKOC(koc);
+  koc = { ...koc, ...result };
+  kocData.push(koc);
+  _sbSave(koc);
+  renderInputTable();
+  document.getElementById('manual-form').style.display = 'none';
+  clearForm();
+  showToast(`✅ 已添加 ${name}，前往「筛选结果」查看`);
+};
+
+function clearForm() {
+  ['f-name','f-username','f-url','f-whatsapp','f-risks','f-collab-fee','f-post-date','f-post-link','f-act-views','f-act-engagement']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['f-city','f-platform','f-category','f-tier','f-ksp','f-script']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = el.id==='f-platform'?'tiktok':''; });
+}
+
+// =================== INPUT TABLE ===================
+function renderInputTable() {
+  const wrap = document.getElementById('input-table-wrap');
+  document.getElementById('total-count').textContent = kocData.length + ' 条';
+
+  if (kocData.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="icon">📋</div><h3>暂无 KOC 数据</h3><p>手动录入或上传 CSV 文件开始</p></div>`;
+    return;
+  }
+
+  const rows = kocData.map((k, i) => `
+    <tr class="fade-in">
+      <td class="td-name">${k.username}</td>
+      <td>${k.platform === 'tiktok' ? '<span class="badge-tt" style="background:#000;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">TikTok</span>' : '<span style="background:#fd1d1d;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">IG</span>'}</td>
+      <td>${fmtNum(k.followers)}</td>
+      <td>${k.platform==='tiktok'?fmtNum(k.avgViews):(fmtNum(k.reelsAvg)||'-')}</td>
+      <td>${k.engagementRate!=null?k.engagementRate.toFixed(1)+'%':'-'}</td>
+      <td><span class="${getStatusClass(k.status)}">${k.verdict}</span></td>
+      <td>
+        <button class="btn btn-sm" onclick="removeKOC(${i})" style="color:var(--fail);border-color:var(--fail-bg);">删除</button>
+      </td>
+    </tr>
+  `).join('');
+
+  wrap.innerHTML = `<div class="table-wrap"><table><thead><tr>
+    <th>账号</th><th>平台</th><th>粉丝量</th><th>播放/Reels</th><th>互动率</th><th>初筛结论</th><th>操作</th>
+  </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function removeKOC(i) {
+  kocData.splice(i, 1);
+  renderInputTable();
+  updateStats();
+}
+
+// =================== SCREENING TABLE ===================
+function renderScreening() {
+  const statusF = document.getElementById('filter-status').value;
+  const platformF = document.getElementById('filter-platform').value;
+  const searchF = document.getElementById('filter-search').value.toLowerCase();
+
+  let filtered = kocData.filter(k => {
+    if (statusF && k.status !== statusF) return false;
+    if (platformF && k.platform !== platformF) return false;
+    if (searchF && !k.username.toLowerCase().includes(searchF)) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('screening-tbody');
+  const empty = document.getElementById('screening-empty');
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = filtered.map(k => {
+    const riskHtml = k.risks && k.risks.length ? k.risks.map(r=>`<span class="risk-tag">${r}</span>`).join('') : '<span style="color:var(--text-3);font-size:11px;">无</span>';
+    const scoreColor = k.score >= 70 ? 'var(--pass)' : k.score >= 50 ? 'var(--risk)' : 'var(--fail)';
+    const avgV = fmtNum(k.avgViews||0);
+    const catLabel = getCatLabel(k.category||k.styleTag);
+    const localPct = Number(k.nigeriaLocalAudience || 0) || (Number(k.lagosAudience || 0) + Number(k.ibadanAudience || 0));
+    const geoLabel = localPct ? `${localPct}%` : (k.geoLabel ? ({'50+':'≥50%','30-50':'30-50%','<30':'<30%'}[k.geoLabel]||k.geoLabel) : '未知');
+    const scoring = k.scoring || {};
+
+    // 联系方式提取
+    const bio = k.bio || '';
+    const contactLines = [];
+    const waMatch = bio.match(/wa\.me\/[\d+]+|whatsapp[:\s]+[\d+\s\-()]+|\+[\d\s\-()]{9,}/i);
+    if (waMatch) contactLines.push(`<a href="https://wa.me/${waMatch[0].replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-size:11px;">📱 ${waMatch[0].trim().slice(0,20)}</a>`);
+    const igMatch = bio.match(/(?:ig|instagram)[:\s@]+([A-Za-z0-9_.]+)/i);
+    if (igMatch) contactLines.push(`<a href="https://instagram.com/${igMatch[1]}" target="_blank" style="color:#E1306C;font-size:11px;">📷 @${igMatch[1]}</a>`);
+    const urlMatch = bio.match(/https?:\/\/[^\s,]+/);
+    if (urlMatch) contactLines.push(`<a href="${urlMatch[0]}" target="_blank" style="color:var(--brand);font-size:11px;">🔗 链接</a>`);
+    if (k.whatsapp) contactLines.push(`<a href="https://wa.me/${k.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-size:11px;">📱 ${k.whatsapp}</a>`);
+    const contactHtml = contactLines.length ? contactLines.join('<br>') : '<span style="color:var(--text-3);font-size:11px;">-</span>';
+
+    // 标签
+    const tags = Array.isArray(k.tags) ? k.tags : [];
+    const tagHtml = tags.map(t => `<span style="display:inline-flex;align-items:center;gap:2px;background:#F0F0F0;border-radius:20px;padding:2px 8px;font-size:11px;margin:1px;">
+      ${t}<span onclick="removeTag('${k.id}','${t}')" style="cursor:pointer;margin-left:2px;color:#999;">×</span>
+    </span>`).join('');
+
+    return `<tr>
+      <td>
+        <div class="td-name">${k.name||k.username}</div>
+        <div style="font-size:11px;color:var(--text-3);">${k.username}</div>
+        ${k.url?`<a href="${k.url}" class="td-link" target="_blank">主页 ↗</a>`:''}
+      </td>
+      <td style="min-width:110px;">${contactHtml}</td>
+      <td style="min-width:160px;">
+        <div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center;">
+          ${tagHtml}
+          <span onclick="openTagPicker('${k.id}',this)" style="cursor:pointer;background:var(--brand-light);color:var(--brand);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;">+ 标签</span>
+        </div>
+      </td>
+      <td>
+        <div style="font-size:12px;font-weight:500;">${k.city||'-'}</div>
+        <div style="font-size:11px;color:var(--text-3);">${k.school||''}</div>
+      </td>
+      <td>${fmtNum(k.followers)}</td>
+      <td>${avgV}</td>
+      <td>${k.engagementRate!=null?k.engagementRate.toFixed(1)+'%':'-'}</td>
+      <td><span style="font-size:12px;">${geoLabel}</span></td>
+      <td style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${catLabel}</td>
+      <td>${scoring.contentBrandFit != null ? scoring.contentBrandFit.toFixed(1) : '-'}</td>
+      <td>${scoring.accountAuthenticity != null ? scoring.accountAuthenticity.toFixed(1) : '-'}</td>
+      <td>
+        <div class="score-bar">
+          <div class="score-track"><div class="score-fill" style="width:${k.score}%;background:${scoreColor};"></div></div>
+          <span class="score-num" style="color:${scoreColor};">${k.score}</span>
+        </div>
+      </td>
+      <td><span class="${getStatusClass(k.status)}">${k.entryGrade || k.verdict}</span></td>
+      <td style="max-width:160px;">${riskHtml}</td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="btn btn-sm" onclick="showDetail('${k.id}')">详情</button>
+          ${k.status !== 'fail' ? `<button class="btn btn-sm btn-primary" onclick="generateBrief('${k.id}')">Brief</button>` : ''}
+          ${k.status !== 'fail' ? `<button class="btn btn-sm" onclick="addToTracking('${k.id}')" style="border-color:var(--pass);color:var(--pass);" title="加入 KOC Tracking List">+ Tracking</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('s-total').textContent = kocData.length;
+  document.getElementById('s-pass').textContent = kocData.filter(k=>k.status==='pass').length;
+  document.getElementById('s-risk').textContent = kocData.filter(k=>k.status==='risk').length;
+  document.getElementById('s-fail').textContent = kocData.filter(k=>k.status==='fail').length;
+  const scores = kocData.map(k=>k.score).filter(s=>s!=null);
+  document.getElementById('s-avg-score').textContent = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : '-';
+}
+
+// =================== KOC TRACKING ===================
+function addToTracking(id) {
+  const k = kocData.find(x => String(x.id) === String(id));
+  if (!k) return;
+  if (trackingList.find(t => String(t.id) === String(id))) {
+    showToast('该 KOC 已在 Tracking List 中');
+    return;
+  }
+  trackingList.push({ ...k });
+  showToast(`✅ ${k.name || k.username} 已加入 KOC Tracking List`);
+  renderTracking();
+}
+
+function removeFromTracking(id) {
+  trackingList = trackingList.filter(t => String(t.id) !== String(id));
+  renderTracking();
+}
+
+function updateTrackingField(id, field, value) {
+  const entry = trackingList.find(t => String(t.id) === String(id));
+  if (entry) entry[field] = value;
+}
+
+// =================== TAG SYSTEM ===================
+const PRESET_TAGS = ['搞笑','生活方式','产品测评','校园','科技','美食','时尚','旅行','音乐','舞蹈','Vlog','时事'];
+
+function openTagPicker(id, el) {
+  // Remove any existing picker
+  document.querySelectorAll('.tag-picker-popup').forEach(p => p.remove());
+  const k = kocData.find(x => String(x.id) === String(id));
+  if (!k) return;
+  const existing = Array.isArray(k.tags) ? k.tags : [];
+  const popup = document.createElement('div');
+  popup.className = 'tag-picker-popup';
+  popup.style.cssText = 'position:absolute;z-index:999;background:white;border:1px solid var(--border);border-radius:10px;padding:10px;box-shadow:0 4px 20px rgba(0,0,0,0.12);min-width:220px;';
+  popup.innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;">选择或输入标签</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+      ${PRESET_TAGS.map(t => `<span onclick="toggleTag('${id}','${t}',this)" style="cursor:pointer;padding:3px 10px;border-radius:20px;font-size:11px;border:1px solid ${existing.includes(t)?'var(--brand)':'var(--border)'};background:${existing.includes(t)?'var(--brand-light)':'white'};color:${existing.includes(t)?'var(--brand)':'var(--text-2)'};">${t}</span>`).join('')}
+    </div>
+    <div style="display:flex;gap:6px;">
+      <input id="custom-tag-input" placeholder="自定义标签..." style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;">
+      <button onclick="addCustomTag('${id}')" class="btn btn-sm btn-primary">添加</button>
+    </div>
+    <div style="text-align:right;margin-top:8px;"><span onclick="this.closest('.tag-picker-popup').remove()" style="cursor:pointer;font-size:12px;color:var(--text-3);">关闭</span></div>
+  `;
+  el.parentNode.style.position = 'relative';
+  el.parentNode.appendChild(popup);
+  setTimeout(() => document.addEventListener('click', function handler(e) {
+    if (!popup.contains(e.target) && e.target !== el) { popup.remove(); document.removeEventListener('click', handler); }
+  }), 100);
+}
+
+function toggleTag(id, tag, el) {
+  const k = kocData.find(x => String(x.id) === String(id));
+  if (!k) return;
+  if (!Array.isArray(k.tags)) k.tags = [];
+  if (k.tags.includes(tag)) {
+    k.tags = k.tags.filter(t => t !== tag);
+    el.style.background = 'white'; el.style.color = 'var(--text-2)'; el.style.borderColor = 'var(--border)';
+  } else {
+    k.tags.push(tag);
+    el.style.background = 'var(--brand-light)'; el.style.color = 'var(--brand)'; el.style.borderColor = 'var(--brand)';
+  }
+  renderScreening();
+}
+
+function addCustomTag(id) {
+  const input = document.getElementById('custom-tag-input');
+  const tag = input.value.trim();
+  if (!tag) return;
+  const k = kocData.find(x => String(x.id) === String(id));
+  if (!k) return;
+  if (!Array.isArray(k.tags)) k.tags = [];
+  if (!k.tags.includes(tag)) k.tags.push(tag);
+  input.value = '';
+  renderScreening();
+}
+
+function removeTag(id, tag) {
+  const k = kocData.find(x => String(x.id) === String(id));
+  if (!k || !Array.isArray(k.tags)) return;
+  k.tags = k.tags.filter(t => t !== tag);
+  renderScreening();
+}
+
+// =================== VIDEO MONITORING ===================
+let videoMonitor = {}; // id -> { postLink, views, likes, comments, shares, updatedAt }
+
+function renderVideoMonitor() {
+  const container = document.getElementById('video-monitor-container');
+  if (!container) return;
+  if (trackingList.length === 0) { container.innerHTML = '<p style="color:var(--text-3);font-size:13px;">先在筛选结果中将 KOC 加入 Tracking</p>'; return; }
+  container.innerHTML = trackingList.map(k => {
+    const vm = videoMonitor[k.id] || {};
+    const views = vm.views || 0;
+    const likes = vm.likes || 0;
+    const comments = vm.comments || 0;
+    const shares = vm.shares || 0;
+    const engRate = views > 0 ? (((likes+comments+shares)/views)*100).toFixed(1) : '-';
+    const alert20k = views >= 20000;
+    return `<div style="border:1px solid ${alert20k?'var(--brand)':'var(--border)'};border-radius:10px;padding:14px 16px;margin-bottom:10px;background:${alert20k?'#FFF3E8':'var(--surface)'};">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <span style="font-weight:600;font-size:13px;">${k.name||k.username}</span>
+          <span style="font-size:11px;color:var(--text-3);margin-left:8px;">@${k.username}</span>
+          ${alert20k ? '<span style="margin-left:8px;background:var(--brand);color:white;font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;">🚀 建议开始投流</span>' : ''}
+        </div>
+        <div style="font-size:12px;color:var(--text-3);">${vm.updatedAt ? '更新：'+vm.updatedAt : '未录入数据'}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div><div style="font-size:11px;color:var(--text-2);margin-bottom:3px;">帖子链接</div>
+          <input value="${vm.postLink||k.postLink||''}" placeholder="https://www.tiktok.com/..." onchange="updateVM('${k.id}','postLink',this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);">
+        </div>
+        <div><div style="font-size:11px;color:var(--text-2);margin-bottom:3px;">播放量 ${alert20k?'<span style=color:var(--brand);font-weight:600>✓ ≥2万</span>':''}</div>
+          <input type="number" value="${views||''}" placeholder="0" onchange="updateVM('${k.id}','views',+this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);">
+        </div>
+        <div><div style="font-size:11px;color:var(--text-2);margin-bottom:3px;">点赞数</div>
+          <input type="number" value="${likes||''}" placeholder="0" onchange="updateVM('${k.id}','likes',+this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);">
+        </div>
+        <div><div style="font-size:11px;color:var(--text-2);margin-bottom:3px;">评论数</div>
+          <input type="number" value="${comments||''}" placeholder="0" onchange="updateVM('${k.id}','comments',+this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);">
+        </div>
+        <div><div style="font-size:11px;color:var(--text-2);margin-bottom:3px;">分享数</div>
+          <input type="number" value="${shares||''}" placeholder="0" onchange="updateVM('${k.id}','shares',+this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);">
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="font-size:11px;color:var(--text-2);margin-bottom:3px;">互动率</div>
+          <div style="font-size:18px;font-weight:700;color:${engRate!=='-'&&+engRate>=3?'var(--pass)':'var(--text-1)'};">${engRate}${engRate!=='-'?'%':''}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateVM(id, field, value) {
+  if (!videoMonitor[id]) videoMonitor[id] = {};
+  videoMonitor[id][field] = value;
+  videoMonitor[id].updatedAt = new Date().toLocaleDateString('zh-CN');
+  renderVideoMonitor();
+}
+
+function renderTracking() {
+  const tbody = document.getElementById('tracking-tbody');
+  const empty = document.getElementById('tracking-empty');
+  if (!tbody) return;
+  renderVideoMonitor();
+
+  if (trackingList.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const TIER_LABELS = {'1k-5k':'1K–5K','5k-10k':'5K–10K','10k-30k':'10K–30K','30k-100k':'30K–100K','50k-100k':'50K–100K','100k-300k':'100K–300K','300k+':'300K+'};
+  const fmtFollowers = f => f >= 1000000 ? (f/1000000).toFixed(1)+'M' : f >= 1000 ? (f/1000).toFixed(0)+'K' : String(f||'');
+  const guessTier = k => {
+    if (k.tier) return TIER_LABELS[k.tier] || k.tier;
+    const f = k.followers || 0;
+    if (f >= 300000) return '300K+';
+    if (f >= 100000) return '100K–300K';
+    if (f >= 50000) return '50K–100K';
+    if (f >= 30000) return '30K–100K';
+    if (f >= 10000) return '10K–30K';
+    if (f >= 5000) return '5K–10K';
+    return '1K–5K';
+  };
+
+  tbody.innerHTML = trackingList.map((k, i) => {
+    const platform = k.platform === 'tiktok' ? 'TikTok' : k.platform === 'instagram' ? 'Instagram' : k.platform || 'TikTok';
+    const profileUrl = k.url || (k.platform === 'tiktok' ? `https://www.tiktok.com/@${k.username}` : '#');
+    const brandCollab = k.brandCollaboration || (k.brandExp === 'yes' ? 'Yes' : k.brandExp === 'no' ? 'No' : '');
+    const instagram = k.hasInstagram === 'yes' ? 'Yes' : k.hasInstagram === 'no' ? 'No' : (k.hasInstagram || '');
+    const recruitmentSource = k.recruitmentSource || ({ self:'Self Apply', outreach:'Outreach', referral:'Referral' }[k.source] || k.source || '');
+    return `<tr>
+      <td style="text-align:center;color:var(--text-3);">${i+1}</td>
+      <td><span style="background:var(--brand-light);color:var(--brand);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">${k.category||'-'}</span></td>
+      <td>
+        <div style="font-weight:600;font-size:13px;">${k.name||k.username}</div>
+        <div style="font-size:11px;color:var(--text-3);">@${k.username}</div>
+      </td>
+      <td><span style="background:#000;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">${platform}</span></td>
+      <td><a href="${profileUrl}" target="_blank" style="color:var(--brand);font-size:12px;">🔗 主页</a></td>
+      <td><span style="font-size:12px;font-weight:500;">${guessTier(k)}</span></td>
+      <td><input value="${k.ksp||''}" onchange="updateTrackingField('${k.id}','ksp',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:130px;background:var(--surface);"></td>
+      <td>
+        <select onchange="updateTrackingField('${k.id}','script',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;background:var(--surface);">
+          <option value="" ${!k.script?'selected':''}>-</option>
+          <option value="Yes" ${k.script==='Yes'?'selected':''}>Yes</option>
+          <option value="No" ${k.script==='No'?'selected':''}>No</option>
+        </select>
+      </td>
+      <td><input type="date" value="${k.postDate||''}" onchange="updateTrackingField('${k.id}','postDate',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;background:var(--surface);"></td>
+      <td><input value="${k.postLink||''}" placeholder="https://..." onchange="updateTrackingField('${k.id}','postLink',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:120px;background:var(--surface);"></td>
+      <td><input type="number" value="${k.collabFee||''}" placeholder="USD" onchange="updateTrackingField('${k.id}','collabFee',+this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:80px;background:var(--surface);text-align:right;"></td>
+      <td><input type="number" value="${k.actViews||''}" placeholder="0" onchange="updateTrackingField('${k.id}','actViews',+this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:90px;background:var(--surface);text-align:right;"></td>
+      <td><input type="number" value="${k.actEngagement||''}" placeholder="0" onchange="updateTrackingField('${k.id}','actEngagement',+this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:90px;background:var(--surface);text-align:right;"></td>
+      <td><input value="${escapeAttr(k.shippingAddress||'')}" placeholder="Dorm / room..." onchange="updateTrackingField('${k.id}','shippingAddress',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:180px;background:var(--surface);"></td>
+      <td>
+        <select onchange="updateTrackingField('${k.id}','brandCollaboration',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;background:var(--surface);">
+          <option value="" ${!brandCollab?'selected':''}>-</option>
+          <option value="Yes" ${brandCollab==='Yes'||brandCollab==='yes'?'selected':''}>Yes</option>
+          <option value="No" ${brandCollab==='No'||brandCollab==='no'?'selected':''}>No</option>
+        </select>
+      </td>
+      <td>
+        <select onchange="updateTrackingField('${k.id}','hasInstagram',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;background:var(--surface);">
+          <option value="" ${!instagram?'selected':''}>-</option>
+          <option value="Yes" ${instagram==='Yes'||instagram==='yes'?'selected':''}>Yes</option>
+          <option value="No" ${instagram==='No'||instagram==='no'?'selected':''}>No</option>
+        </select>
+      </td>
+      <td>
+        <select onchange="updateTrackingField('${k.id}','recruitmentSource',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;background:var(--surface);width:130px;">
+          <option value="" ${!recruitmentSource?'selected':''}>-</option>
+          <option value="Self Apply" ${recruitmentSource==='Self Apply'?'selected':''}>Self Apply</option>
+          <option value="Outreach" ${recruitmentSource==='Outreach'?'selected':''}>Outreach</option>
+          <option value="Referral" ${recruitmentSource==='Referral'?'selected':''}>Referral</option>
+          <option value="Agency" ${recruitmentSource==='Agency'?'selected':''}>Agency</option>
+        </select>
+      </td>
+      <td>
+        <button class="btn btn-sm" onclick="removeFromTracking('${k.id}')" style="color:var(--fail);border-color:var(--fail-bg);">移除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function exportTrackingCSV() {
+  if (trackingList.length === 0) { showToast('暂无数据可导出'); return; }
+  const headers = ['#','Category','KOC','Platforms','Profile Link','Tier','KSP','Script','Post Date','Post Link','Collaboration Fee (USD)','Act. Views','Act. Engagement','Shipping Address','Brand Collab?','Instagram?','Recruitment Source'];
+  const TIER_LABELS = {'1k-5k':'1K–5K','5k-10k':'5K–10K','10k-30k':'10K–30K','30k-100k':'30K–100K','50k-100k':'50K–100K','100k-300k':'100K–300K','300k+':'300K+'};
+  const guessTier = k => {
+    if (k.tier) return TIER_LABELS[k.tier] || k.tier;
+    const f = k.followers || 0;
+    if (f >= 300000) return '300K+'; if (f >= 100000) return '100K–300K';
+    if (f >= 50000) return '50K–100K'; if (f >= 30000) return '30K–100K';
+    if (f >= 10000) return '10K–30K'; if (f >= 5000) return '5K–10K'; return '1K–5K';
+  };
+  const rows = trackingList.map((k,i) => [
+    i+1, k.category||'', k.name||k.username,
+    k.platform==='tiktok'?'TikTok':k.platform||'TikTok',
+    k.url||`https://www.tiktok.com/@${k.username}`,
+    guessTier(k), k.ksp||'', k.script||'', k.postDate||'', k.postLink||'',
+    k.collabFee||'', k.actViews||'', k.actEngagement||'',
+    k.shippingAddress||'',
+    k.brandCollaboration || (k.brandExp === 'yes' ? 'Yes' : k.brandExp === 'no' ? 'No' : ''),
+    k.hasInstagram === 'yes' ? 'Yes' : k.hasInstagram === 'no' ? 'No' : (k.hasInstagram || ''),
+    k.recruitmentSource || ({ self:'Self Apply', outreach:'Outreach', referral:'Referral' }[k.source] || k.source || '')
+  ].map(csvCell).join(','));
+  const csv = [headers.map(csvCell).join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
+  a.download = `KOC_Tracking_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// =================== BRIEF GENERATOR ===================
+function generateBrief(id) {
+  const k = kocData.find(x => String(x.id) === String(id));
+  if (!k) return;
+
+  briefs[id] = {
+    koc: k,
+    content: buildHot70BriefContent(k)
+  };
+
+  // Switch to brief panel
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="panel-brief"]').classList.add('active');
+  document.getElementById('panel-brief').classList.add('active');
+  renderBriefs();
+}
+
+function generateAllBriefs() {
+  kocData.filter(k => k.status !== 'fail').forEach(k => generateBrief(String(k.id)));
+}
+
+function buildHot70BriefContent(k) {
+  const platform = k.platform === 'instagram' ? 'Instagram' : k.platform === 'youtube' ? 'YouTube' : 'TikTok';
+  const localAudience = Number(k.nigeriaLocalAudience || 0) || (Number(k.lagosAudience || 0) + Number(k.ibadanAudience || 0));
+  const cityText = [k.city, k.school].filter(Boolean).join(' / ') || 'Lagos & Ibadan campus audience';
+  const kocLabel = k.name || k.username;
+  const collabFee = Number(k.collabFee || k.price || 0);
+  const targetPostDate = k.postDate || '待确认';
+  const profileLink = k.url || (k.username ? `https://www.tiktok.com/@${String(k.username).replace(/^@/,'')}` : '待补充');
+  const category = getCatLabel(k.category || k.styleTag);
+  const ksp = k.ksp || 'Appearance + 45W fast charging';
+  const contentAngles = getHot70ContentDirections(k);
+  const tags = ['#BeSeenBeHot', '#infinixhot70series', '#InfinixHot70', '#InfinixNigeria'];
+  if (String(k.category || '').toLowerCase().includes('campus')) tags.push('#CampusLife');
+
+  return {
+    title: `Infinix Hot 70 · ${kocLabel} 定制 Brief`,
+    platform,
+    kocLabel,
+    profileLink,
+    scoreLine: `${k.entryGrade || '待定'} · ${k.score ?? '-'} 分 · ${fmtNum(k.followers)} followers`,
+    product: {
+      name: 'Infinix Hot 70',
+      brand: 'Infinix',
+      sellingPoint: ksp,
+      price: '₦189,700',
+      purchaseChannel: '待填：Jumia / 官网 / 线下门店',
+      targetAudience: `${cityText} · 18-25 岁年轻学生 / 校园人群`
+    },
+    kocFit: {
+      category,
+      localAudience: localAudience ? `${localAudience}% Nigeria / Lagos-Ibadan audience` : '待核实本地受众占比',
+      instagram: k.hasInstagram === 'Yes' || k.hasInstagram === 'yes' ? '同时运营 Instagram，可做二次传播' : 'Instagram 二次传播待确认',
+      source: k.recruitmentSource || ({ self:'Self Apply', outreach:'Outreach', referral:'Referral' }[k.source] || '待确认')
+    },
+    contentDirections: contentAngles,
+    competitorLine: `Most phones at this price take 1 hour to charge — Hot 70 does it in 20 minutes. That's the difference between 18W and 45W fast charging.`,
+    contentFormats: ['开箱视频', '快充实测（计时对比）', '外观展示 + 配色', '校园日常 Vlog'],
+    avoid: ['避免提及竞品品牌名', '避免纯念稿广告感', '避免只拍产品不讲使用场景'],
+    terms: {
+      collaboration: collabFee ? `付费合作：USD ${collabFee}` : '免费寄送 Infinix Hot 70 一台（留用）',
+      deliverable: '持续发布视频，直至单条达到 20,000 播放量',
+      firstPost: targetPostDate === '待确认' ? '收货后 3 天内发出第一条' : `计划首条发布：${targetPostDate}`,
+      duration: '30-60 秒',
+      review: k.script === 'Yes' ? '按品牌脚本方向拍摄，可直接发布' : '无需逐条审核，可直接发布',
+      requiredTags: tags
+    },
+    specs: [
+      '竖屏拍摄，9:16 比例',
+      '画面清晰，光线充足，避免昏暗宿舍光',
+      '建议真人出镜或手持展示，增强真实感',
+      '字幕建议使用英文或本地混合语言，便于校园用户理解',
+      'BGM 不使用敏感/侵权音源'
+    ],
+    submission: {
+      afterPost: '每条发布后将视频链接发送给 Olu 确认',
+      dataBack: '发布后第 3 天和第 7 天各截图一次播放/互动数据',
+      contact: 'Olu（WhatsApp 号码待填）',
+      postLink: k.postLink || '发布后补充'
+    }
+  };
+}
+
+function getHot70ContentDirections(k) {
+  const cat = String(k.category || '').toLowerCase();
+  const directions = [
+    { title: '外观颜值', desc: '拿出来有面子，设计好看，上镜，适合课堂、宿舍、校园路上等日常场景。' },
+    { title: '45W 快充对比', desc: '用计时方式展示 Hot 70 约 20 分钟完成快充，对比同价位常见 18W 约 1 小时；不提竞品品牌名，用数字说话。' }
+  ];
+  if (cat.includes('campus') || cat.includes('lifestyle')) {
+    directions.push({ title: '校园日常 Vlog', desc: '从上课、社团、宿舍到晚间出门，把 Hot 70 作为日常随身手机自然带入。' });
+  }
+  if (cat.includes('skin') || cat.includes('beauty') || cat.includes('fashion')) {
+    directions.push({ title: '上镜外观 + 穿搭搭配', desc: '结合自拍、镜前展示或 outfit check，突出手机外观、配色和年轻感。' });
+  }
+  if (cat.includes('tech')) {
+    directions.push({ title: '真实测试型内容', desc: '用简洁数据讲清楚充电速度、屏幕流畅度和日常使用体验，避免过度广告化。' });
+  }
+  return directions;
+}
+
+function getVideoAngles(k) {
+  const angles = [];
+  const cat = k.category || '';
+
+  angles.push({ title: '开箱 + 第一印象', desc: `在宿舍/寝室拍开箱，展示包装、外观、上手感受。重点突出屏幕颜值和手感。时长：45-60秒 TikTok / 60秒 Reels。` });
+  angles.push({ title: '续航挑战 vlog', desc: `「我用 Infinix Hot 70 撑过了整整一天的课」—— 从早上8点到晚上11点全程记录，展示 6000mAh 超长续航。时长：60-90秒竖屏 vlog。` });
+  if (['campus','lifestyle','entertainment'].includes(cat) || k.platform === 'instagram') {
+    angles.push({ title: '校园日常 + 产品植入', desc: `自然融入校园场景：课堂笔记拍照、与室友视频、听歌刷题等，产品作为日常工具出现，非硬广。` });
+  }
+  if (['tech','campus'].includes(cat)) {
+    angles.push({ title: '相机 PK / 拍照测试', desc: `用 Hot 70 拍摄校园人像、夜景，展示 AI 拍照效果，可与同价位竞品做对比（不贬低，重点突出自身优势）。` });
+  }
+  angles.push({ title: '价格锚定 + 性价比表达', desc: `「以这个价格，能买到这个体验？」—— 强调产品在同价位段的竞争力，适合 15-30秒短视频或 Story。` });
+
+  return angles;
+}
+
+function renderBriefs() {
+  const container = document.getElementById('brief-container');
+  const ids = Object.keys(briefs);
+  if (ids.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📄</div><h3>暂无 Brief</h3><p>在筛选结果中选择通过的 KOC 并点击「生成 Brief」</p></div>`;
+    return;
+  }
+
+  container.innerHTML = ids.map(id => {
+    const b = briefs[id];
+    const k = b.koc;
+    const c = b.content;
+    return `<div class="brief-card fade-in">
+      <div class="brief-header">
+        <div>
+          <div class="brief-koc-name">${c.title}</div>
+          <div class="brief-platform">${c.platform} · ${c.scoreLine} · ${c.kocFit.category}</div>
+          <a href="${c.profileLink}" class="td-link" target="_blank">${c.profileLink}</a>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="${getStatusClass(k.status)}">${k.verdict}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--brand);">评分 ${k.score}</span>
+        </div>
+      </div>
+
+      <div class="brief-section">
+        <div class="brief-section-title">产品信息</div>
+        <div class="brief-content">
+          <strong>产品名称：</strong>${c.product.name}<br>
+          <strong>品牌：</strong>${c.product.brand}<br>
+          <strong>核心卖点：</strong>${c.product.sellingPoint}<br>
+          <strong>官方售价：</strong>${c.product.price}<br>
+          <strong>购买渠道：</strong>${c.product.purchaseChannel}<br>
+          <strong>目标人群：</strong>${c.product.targetAudience}
+        </div>
+      </div>
+
+      <div class="brief-section">
+        <div class="brief-section-title">KOC 匹配信息</div>
+        <div class="brief-content">
+          <strong>内容垂类：</strong>${c.kocFit.category}<br>
+          <strong>本地受众：</strong>${c.kocFit.localAudience}<br>
+          <strong>Instagram：</strong>${c.kocFit.instagram}<br>
+          <strong>招募来源：</strong>${c.kocFit.source}
+        </div>
+      </div>
+
+      <div class="brief-section">
+        <div class="brief-section-title">内容方向</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${c.contentDirections.map((d,i)=>`
+            <div class="brief-deliverable">
+              <span class="brief-num">${i+1}</span>
+              <div>
+                <div style="font-weight:500;font-size:13px;">${d.title}</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">${d.desc}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="brief-content" style="margin-top:10px;background:#FFF9E6;border:1px solid #F0C040;">
+          <strong>竞品对比话术参考：</strong><br>${c.competitorLine}
+        </div>
+        <div class="brief-tags" style="margin-top:10px;">
+          ${c.contentFormats.map(t=>`<span class="brief-tag">${t}</span>`).join('')}
+          ${c.avoid.map(t=>`<span class="risk-tag">${t}</span>`).join('')}
+        </div>
+      </div>
+
+      <div class="brief-section">
+        <div class="brief-section-title">合作条款</div>
+        <div class="brief-content">
+          <strong>合作形式：</strong>${c.terms.collaboration}<br>
+          <strong>交付内容：</strong>${c.terms.deliverable}<br>
+          <strong>首条发布：</strong>${c.terms.firstPost}<br>
+          <strong>视频时长：</strong>${c.terms.duration}<br>
+          <strong>审核流程：</strong>${c.terms.review}<br>
+          <strong>必须标注：</strong>${c.terms.requiredTags.join(' · ')}
+        </div>
+      </div>
+
+      <div class="brief-section">
+        <div class="brief-section-title">技术规范</div>
+        <div class="brief-content">
+          ${c.specs.map(s=>`• ${s}`).join('<br>')}
+        </div>
+      </div>
+
+      <div class="brief-section">
+        <div class="brief-section-title">发布 & 提交</div>
+        <div class="brief-content">
+          <strong>每条发布后：</strong>${c.submission.afterPost}<br>
+          <strong>数据回传：</strong>${c.submission.dataBack}<br>
+          <strong>项目对接人：</strong>${c.submission.contact}<br>
+          <strong>发布链接：</strong>${c.submission.postLink}
+        </div>
+      </div>
+
+      <div class="brief-section" id="script-section-${id}" style="display:${b.script?'block':'none'};">
+        <div class="brief-section-title">🤖 定制脚本</div>
+        <div style="background:#F8F8F8;border-radius:8px;padding:12px;font-size:13px;line-height:1.8;white-space:pre-wrap;" id="script-content-${id}">${b.script||''}</div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+        <button class="btn btn-sm" onclick="genScript('${id}')">🤖 生成定制脚本</button>
+        <button class="btn btn-sm" onclick="copyBrief('${id}')">📋 复制 Brief</button>
+        <button class="btn btn-sm" style="color:var(--fail);border-color:var(--fail);" onclick="delete briefs['${id}'];renderBriefs();">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let briefTemplate = {};
+
+function saveBriefTemplate() {
+  briefTemplate = {
+    product: document.getElementById('brief-product')?.value || 'Infinix Hot 70',
+    ksp: document.getElementById('brief-ksp')?.value || '',
+    audience: document.getElementById('brief-audience')?.value || '',
+    price: document.getElementById('brief-price')?.value || '',
+    collab: document.getElementById('brief-collab')?.value || '',
+    boostThreshold: document.getElementById('brief-boost-threshold')?.value || '20000',
+    contentReq: document.getElementById('brief-content-req')?.value || '',
+  };
+}
+
+function genScript(id) {
+  const b = briefs[id];
+  if (!b) return;
+  const k = b.koc;
+  const tags = Array.isArray(k.tags) && k.tags.length ? k.tags.join('、') : '未标注';
+
+  if (!Object.keys(briefTemplate).length) {
+    showToast('⚠️ 请先在 Step 1 填写并保存 Brief 模板');
+    return;
+  }
+  const tmpl = briefTemplate;
+
+  const prompt = `你是一位专业的 KOC 内容策划，请根据以下信息为这位博主生成一份定制化的 TikTok 视频脚本。
+
+【博主信息】
+- 昵称：${k.name || k.username}
+- 账号：@${k.username}
+- 粉丝量：${fmtNum(k.followers)}
+- 内容标签：${tags}
+- 简介：${k.bio || '无'}
+
+【产品信息】
+- 产品：${tmpl.product || ''}
+- 核心卖点（KSP）：${tmpl.ksp || ''}
+- 售价：${tmpl.price || ''}
+- 目标人群：${tmpl.audience || ''}
+- 合作形式：${tmpl.collabForm || ''}
+- 投流门槛：${tmpl.boostThreshold || ''}
+
+【内容要求】
+${tmpl.contentReq || '（无额外内容要求）'}
+
+【脚本要求】
+请根据该博主的内容风格（${tags}），生成一份自然、符合其人设的视频脚本，包含：
+1. 开场钩子（前3秒抓住注意力）
+2. 产品展示节奏（结合博主风格）
+3. 核心卖点的自然植入方式
+4. 结尾 CTA + 标签
+
+请用英语撰写脚本，语气要贴合博主的日常风格。`;
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    showToast('✅ 脚本生成指令已复制，粘贴给 Claude 即可获得定制脚本');
+  });
+}
+
+function copyBrief(id) {
+  const b = briefs[id];
+  if (!b) return;
+  const text = briefToText(b);
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Brief 已复制到剪贴板');
+  });
+}
+
+function briefToText(b) {
+  const k = b.koc;
+  const c = b.content;
+  return `【${c.title}】
+KOC：${c.kocLabel} | 账号：${k.username} | 平台：${c.platform}
+主页：${c.profileLink}
+评级：${c.scoreLine}
+
+【产品信息】
+产品名称：${c.product.name}
+品牌：${c.product.brand}
+核心卖点：${c.product.sellingPoint}
+官方售价：${c.product.price}
+购买渠道：${c.product.purchaseChannel}
+目标人群：${c.product.targetAudience}
+
+【KOC 匹配信息】
+内容垂类：${c.kocFit.category}
+本地受众：${c.kocFit.localAudience}
+Instagram：${c.kocFit.instagram}
+招募来源：${c.kocFit.source}
+
+【内容方向】
+${c.contentDirections.map((d,i)=>`${i+1}. ${d.title}\n   ${d.desc}`).join('\n')}
+
+竞品对比话术参考：
+${c.competitorLine}
+
+推荐内容形式：${c.contentFormats.join(' / ')}
+避免：${c.avoid.join(' / ')}
+
+【合作条款】
+合作形式：${c.terms.collaboration}
+交付内容：${c.terms.deliverable}
+首条发布：${c.terms.firstPost}
+视频时长：${c.terms.duration}
+审核流程：${c.terms.review}
+必须标注：${c.terms.requiredTags.join(' ')}
+
+【技术规范】
+${c.specs.map(s=>`- ${s}`).join('\n')}
+
+【发布 & 提交】
+每条发布后：${c.submission.afterPost}
+数据回传：${c.submission.dataBack}
+项目对接人：${c.submission.contact}
+发布链接：${c.submission.postLink}`;
+}
+
+// =================== DETAIL MODAL ===================
+function showDetail(id) {
+  const k = kocData.find(x => String(x.id) === String(id));
+  if (!k) return;
+
+  const scoring = k.scoring || {};
+  const ruleChecks = [
+    { label:'内容与品牌契合度', val: scoring.contentBrandFit },
+    { label:'受众与目标人群重叠度', val: scoring.targetAudienceOverlap },
+    { label:'尼日利亚本地受众占比', val: scoring.nigeriaLocalAudience },
+    { label:'账号真实性评估', val: scoring.accountAuthenticity },
+    { label:'KOL 类型分级', val: scoring.kolTypeGrade },
+    { label:'历史合作口碑', val: scoring.collabReputation },
+    { label:'内容产出稳定性', val: scoring.outputStability },
+    { label:'独家性 / 竞品冲突', val: scoring.competitorConflict },
+  ];
+
+  document.getElementById('modal-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div>
+        <div style="font-size:11px;color:var(--text-3);">平台</div>
+        <div>${k.platform === 'tiktok' ? 'TikTok' : 'Instagram'}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-3);">综合评分 / 入库等级</div>
+        <div style="font-size:20px;font-weight:600;color:var(--brand);">${k.score} / 100 · ${k.entryGrade || '-'}</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px;">评分明细（每项 0-10）</div>
+      ${ruleChecks.map(r=>`
+        <div class="rule-check">
+          <span class="rule-icon ${r.val >= 7?'rule-pass':r.val >= 5?'rule-warn':'rule-fail'}">●</span>
+          <span>${r.label}</span>
+          <span style="margin-left:auto;font-size:12px;font-weight:600;">${r.val != null ? r.val.toFixed(1) : '-'}</span>
+        </div>
+      `).join('')}
+    </div>
+
+    ${k.risks && k.risks.length ? `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px;">风险标记</div>
+      <div>${k.risks.map(r=>`<span class="risk-tag">${r}</span>`).join(' ')}</div>
+    </div>` : ''}
+
+    ${k.failReasons && k.failReasons.length ? `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--fail);margin-bottom:8px;">不通过原因</div>
+      ${k.failReasons.map(r=>`<div style="font-size:12px;color:var(--fail);padding:3px 0;">• ${r}</div>`).join('')}
+    </div>` : ''}
+
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;">
+      ${k.status !== 'fail' ? `<button class="btn btn-primary btn-sm" onclick="generateBrief('${k.id}');closeModal();">生成 Brief</button>` : ''}
+      <button class="btn btn-sm" onclick="closeModal()">关闭</button>
+    </div>
+  `;
+
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+}
+document.getElementById('detail-modal').onclick = (e) => {
+  if (e.target === document.getElementById('detail-modal')) closeModal();
+};
+
+// =================== CSV UPLOAD ===================
+document.getElementById('csv-upload').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const text = ev.target.result;
+    parsedCSV = parseCSV(text);
+    showCSVPreview(parsedCSV);
+  };
+  reader.readAsText(file);
+});
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const headers = parseCSVLine(lines[0]).map(h => h.trim());
+  const rows = lines.slice(1).map(line => {
+    const vals = parseCSVLine(line).map(v => v.trim());
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i] || '');
+    return obj;
+  });
+  return { headers, rows };
+}
+
+function parseCSVLine(line) {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    const next = line[i + 1];
+    if (ch === '"' && inQuotes && next === '"') {
+      current += '"';
+      i++;
+    } else if (ch === '"') {
+      inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      values.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  values.push(current);
+  return values;
+}
+
+function csvCell(value) {
+  return `"${String(value ?? '').replace(/"/g, '""')}"`;
+}
+
+function escapeAttr(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function getRowField(row, names) {
+  for (const name of names) {
+    if (row[name] != null && String(row[name]).trim() !== '') return String(row[name]).trim();
+  }
+  const normalized = {};
+  Object.keys(row).forEach(key => {
+    normalized[key.trim().toLowerCase()] = row[key];
+  });
+  for (const name of names) {
+    const key = name.trim().toLowerCase();
+    if (normalized[key] != null && String(normalized[key]).trim() !== '') return String(normalized[key]).trim();
+  }
+  return '';
+}
+
+function normalizePlatform(value) {
+  const v = String(value || 'tiktok').toLowerCase();
+  if (v.includes('ig') || v.includes('instagram')) return 'instagram';
+  if (v.includes('youtube')) return 'youtube';
+  return 'tiktok';
+}
+
+function normalizeTier(value) {
+  const v = String(value || '').toLowerCase().replace(/[–—]/g, '-').replace(/\s/g, '');
+  const aliases = {
+    '1k-5k': '1k-5k',
+    '5k-10k': '5k-10k',
+    '10k-30k': '10k-30k',
+    '30k-100k': '30k-100k',
+    '50k-100k': '50k-100k',
+    '100k-300k': '100k-300k',
+    '300k+': '300k+'
+  };
+  return aliases[v] || value;
+}
+
+function showCSVPreview(data) {
+  const previewTable = `<table><thead><tr>${data.headers.map(h=>`<th style="padding:6px 10px;background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap;">${h}</th>`).join('')}</tr></thead>
+    <tbody>${data.rows.slice(0,5).map(r=>`<tr>${data.headers.map(h=>`<td style="padding:5px 10px;border-bottom:1px solid var(--border);">${r[h]||''}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+  document.getElementById('csv-preview-table').innerHTML = previewTable;
+  document.getElementById('upload-feedback').style.display = '';
+}
+
+document.getElementById('btn-import-csv').onclick = () => {
+  if (!parsedCSV) return;
+  let importedCount = 0;
+  parsedCSV.rows.forEach(row => {
+    const platform = normalizePlatform(getRowField(row, ['Platforms', 'Platform', 'platform', '平台']));
+    const username = getRowField(row, ['KOC', 'username', '账号名', '账号']);
+    if (!username) return;
+    const tier = normalizeTier(getRowField(row, ['Tier', '粉丝量级']));
+    const actViews = +getRowField(row, ['Act. Views', 'Actual Views', 'act_views', '实际播放']) || 0;
+    const actEngagement = +getRowField(row, ['Act. Engagement', 'Actual Engagement', 'act_engagement', '实际互动']) || 0;
+    const followers = +getRowField(row, ['followers', '粉丝量']) || TIER_FOLLOWERS[tier] || 0;
+    const engRate = +getRowField(row, ['engagement_rate', '互动率']) || 0;
+    const lagos = +getRowField(row, ['lagos', 'Lagos受众占比']) || 0;
+    const ibadan = +getRowField(row, ['ibadan', 'Ibadan受众占比']) || 0;
+
+    let koc = {
+      id: Date.now() + Math.random(),
+      platform,
+      username,
+      name: username,
+      url: getRowField(row, ['Profile Link', 'url', '主页链接']),
+      tier,
+      ksp: getRowField(row, ['KSP']),
+      script: getRowField(row, ['Script']),
+      postDate: getRowField(row, ['Post Date', 'post_date']),
+      postLink: getRowField(row, ['Post Link', 'post_link']),
+      collabFee: +getRowField(row, ['Collaboration Fee (USD)', 'Collab Fee (USD)', 'collab_fee']) || 0,
+      actViews,
+      actEngagement,
+      shippingAddress: getRowField(row, ['Shipping Address', '收货地址']),
+      brandCollaboration: getRowField(row, ['Brand Collab?', 'Brand Collaboration', '是否有过品牌合作']),
+      hasInstagram: getRowField(row, ['Instagram?', 'Instagram', '是否同时运营 Instagram', '是否同时运营Instagram']),
+      recruitmentSource: getRowField(row, ['Recruitment Source', '招募渠道来源']),
+      followers,
+      engagementRate: engRate,
+      lagosAudience: lagos,
+      ibadanAudience: ibadan,
+      nigeriaLocalAudience: +getRowField(row, ['Nigeria Local Audience %', '尼日利亚本地受众占比', '本地受众占比']) || 0,
+      contentBrandFit: getRowField(row, ['Content Brand Fit', '内容与品牌契合度评分']),
+      targetAudienceOverlap: getRowField(row, ['Target Audience Overlap', '受众与目标人群重叠度']),
+      accountAuthenticity: getRowField(row, ['Account Authenticity', '账号真实性评估']),
+      kolTypeGrade: getRowField(row, ['KOL Type Grade', 'KOL 类型分级']),
+      collabReputation: getRowField(row, ['Collab Reputation', '历史合作口碑']),
+      outputStability: getRowField(row, ['Output Stability', '内容产出稳定性']),
+      competitorConflict: getRowField(row, ['Competitor Conflict', '独家性 / 竞品冲突', '独家性/竞品冲突']),
+      remark: getRowField(row, ['Remark / Not-in Reason', '备注 / 不入库原因', '备注/不入库原因']),
+      category: getRowField(row, ['Category', 'category', '垂类']),
+      manualRisks: [],
+    };
+
+    if (platform === 'tiktok') {
+      koc.avgViews = +getRowField(row, ['avg_views', '平均播放量']) || actViews || 0;
+      koc.completion = +getRowField(row, ['completion', '完播率']) || 0;
+      koc.growthTrend = getRowField(row, ['growth', '增长趋势']);
+      koc.frequency = getRowField(row, ['frequency', '发布频率']);
+      koc.hasCommerce = getRowField(row, ['commerce']);
+    } else {
+      koc.reelsAvg = +getRowField(row, ['reels_avg', 'Reels平均播放']) || actViews || 0;
+      koc.storyAvg = +getRowField(row, ['story_avg']) || 0;
+      koc.qualityScore = +getRowField(row, ['quality_score']) || 0;
+    }
+
+    koc.price = +getRowField(row, ['price', '报价']) || koc.collabFee || 0;
+    koc.collabType = getRowField(row, ['collab_type', '合作形式']);
+
+    const result = scoreKOC(koc);
+    kocData.push({ ...koc, ...result });
+    importedCount++;
+  });
+
+  renderInputTable();
+  updateStats();
+  document.getElementById('upload-feedback').style.display = 'none';
+  parsedCSV = null;
+  showToast(`已导入 ${importedCount} 条 KOC 数据`);
+};
+
+document.getElementById('btn-cancel-csv').onclick = () => {
+  document.getElementById('upload-feedback').style.display = 'none';
+  parsedCSV = null;
+};
+
+// =================== SAMPLE DATA ===================
+document.getElementById('btn-load-sample').onclick = () => {
+  const samples = [
+    { id: 'tt001', platform:'tiktok', name:'Adenike Johnson', username:'@adenike_lagos', url:'', city:'Lagos', school:'UNILAG', grade:'大三 / Mass Comm', whatsapp:'+2348012345678', email:'adenike@gmail.com', followers:18500, avgViews:4200, videos:[4500,4100,3800,5200,3400], likes:380, comments:65, shares:42, engagementRate:11.6, frequency:'3-5/week', growthTrend:'up', geoLabel:'50+', lagosAudience:55, hasTechContent:'yes', brandExp:'yes', hasInstagram:'yes', source:'outreach', accountAge:'1-2y', category:'campus', audienceAge:'18-24', manualRisks:[] },
+    { id: 'tt002', platform:'tiktok', name:'Chukwuemeka Obi', username:'@techbro_obi', url:'', city:'Lagos', school:'LASU', grade:'大四 / Computer Sci', whatsapp:'+2348023456789', email:'', followers:9200, avgViews:1600, videos:[1800,1500,1400,2100,1200], likes:210, comments:38, shares:25, engagementRate:17.1, frequency:'3-5/week', growthTrend:'up', geoLabel:'30-50', lagosAudience:40, hasTechContent:'yes', brandExp:'no', hasInstagram:'no', source:'outreach', accountAge:'1-2y', category:'tech', audienceAge:'18-24', manualRisks:[] },
+    { id: 'tt003', platform:'tiktok', name:'Unknown Acct', username:'@campus_vibes_ng', url:'', city:'Lagos', school:'Other', grade:'', whatsapp:'', email:'', followers:62000, avgViews:320, videos:[300,350,280,400,280], likes:45, comments:8, shares:3, engagementRate:0.5, frequency:'1-2/week', growthTrend:'flat', geoLabel:'<30', lagosAudience:15, hasTechContent:'no', brandExp:'no', hasInstagram:'no', source:'outreach', accountAge:'2y+', category:'entertainment', audienceAge:'18-24', manualRisks:['内容互动异常'] },
+    { id: 'tt004', platform:'tiktok', name:'Femi Adaro', username:'@femi_daro', url:'', city:'Ibadan', school:'UI', grade:'大二 / Economics', whatsapp:'+2348034567890', email:'femi@gmail.com', followers:7800, avgViews:2100, videos:[2400,1900,2200,1800,2100], likes:195, comments:42, shares:28, engagementRate:12.6, frequency:'3-5/week', growthTrend:'up', geoLabel:'50+', lagosAudience:55, hasTechContent:'yes', brandExp:'yes', hasInstagram:'yes', source:'referral', accountAge:'1-2y', category:'lifestyle', audienceAge:'18-24', manualRisks:[] },
+    { id: 'tt005', platform:'tiktok', name:'Blessing Eze', username:'@blessing_ibadan', url:'', city:'Ibadan', school:'UI', grade:'大一 / Business Admin', whatsapp:'+2348045678901', email:'', followers:5500, avgViews:980, videos:[1200,900,800,1100,920], likes:88, comments:22, shares:12, engagementRate:12.4, frequency:'1-2/week', growthTrend:'up', geoLabel:'50+', lagosAudience:55, hasTechContent:'no', brandExp:'no', hasInstagram:'yes', source:'self', accountAge:'6-12m', category:'campus', audienceAge:'18-24', manualRisks:[] },
+    { id: 'tt006', platform:'tiktok', name:'Tunde Bakare', username:'@tundecreates_ng', url:'', city:'Lagos', school:'Covenant', grade:'大三 / Media Studies', whatsapp:'+2348056789012', email:'tunde@gmail.com', followers:3200, avgViews:600, videos:[700,550,650,600,500], likes:62, comments:18, shares:9, engagementRate:14.8, frequency:'1-2/week', growthTrend:'flat', geoLabel:'30-50', lagosAudience:40, hasTechContent:'yes', brandExp:'no', hasInstagram:'no', source:'self', accountAge:'6-12m', category:'tech', audienceAge:'18-24', manualRisks:[] },
+  ];
+
+  samples.forEach(k => {
+    const result = scoreKOC(k);
+    kocData.push({ ...k, ...result });
+  });
+
+  renderInputTable();
+  updateStats();
+  showToast('已加载 6 条示例 KOC 数据');
+};
+
+// =================== TEMPLATE DOWNLOAD ===================
+document.getElementById('btn-export-template').onclick = () => {
+  const rows = [TRACKING_TEMPLATE_HEADERS, TRACKING_TEMPLATE_EXAMPLE];
+  const csv = rows.map(row => row.map(csvCell).join(',')).join('\n');
+  downloadFile('koc_tracking_template.csv', '\ufeff' + csv, 'text/csv;charset=utf-8');
+};
+
+// =================== EXPORT ===================
+function exportCSV() {
+  const headers = ['账号名','平台','粉丝量','平均播放/Reels','互动率(%)','尼日利亚本地受众(%)','垂类','内容与品牌契合','目标人群重叠','账号真实性','KOL类型','历史合作口碑','产出稳定性','独家/竞品冲突','综合评分','入库等级','结论','风险/备注','报价','合作形式'];
+  const rows = kocData.map(k => [
+    k.username, k.platform==='tiktok'?'TikTok':'Instagram',
+    k.followers, k.platform==='tiktok'?(k.avgViews||0):(k.reelsAvg||0),
+    k.engagementRate?k.engagementRate.toFixed(1):'',
+    k.nigeriaLocalAudience || ((k.lagosAudience||0) + (k.ibadanAudience||0)),
+    k.category||k.styleTag||'',
+    k.scoring?.contentBrandFit ?? '',
+    k.scoring?.targetAudienceOverlap ?? '',
+    k.scoring?.accountAuthenticity ?? '',
+    k.scoring?.kolTypeGrade ?? '',
+    k.scoring?.collabReputation ?? '',
+    k.scoring?.outputStability ?? '',
+    k.scoring?.competitorConflict ?? '',
+    k.score, k.entryGrade || '', k.verdict,
+    (k.risks||[]).join('; '),
+    k.price||'', k.collabType||''
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(csvCell).join(',')).join('\n');
+  downloadFile('koc_screening_result.csv', '\ufeff' + csv, 'text/csv;charset=utf-8');
+}
+
+function exportBriefs() {
+  const ids = Object.keys(briefs);
+  if (!ids.length) { showToast('暂无 Brief 可导出'); return; }
+  const text = ids.map(id => briefToText(briefs[id])).join('\n\n========================================\n\n');
+  downloadFile('infinix_hot70_koc_briefs.txt', text, 'text/plain');
+}
+
+// =================== RESCORE ===================
+function reScoreAll() {
+  kocData = kocData.map(k => {
+    const result = scoreKOC(k);
+    return { ...k, ...result };
+  });
+  renderInputTable();
+  renderScreening();
+  updateStats();
+  showToast('已完成重新评分');
+}
+
+// =================== UTILS ===================
+function fmtNum(n) {
+  if (!n && n !== 0) return '-';
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return String(Math.round(n));
+}
+
+function getStatusClass(status) {
+  return { pass: 'status-pass', fail: 'status-fail', risk: 'status-risk' }[status] || 'status-pending';
+}
+
+function getCatLabel(cat) {
+  const map = { campus:'校园/学生', tech:'科技/数码', lifestyle:'生活方式', fashion:'时尚', entertainment:'娱乐', food:'美食', sports:'运动', other:'其他' };
+  return map[cat] || cat || '-';
+}
+
+function downloadFile(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+// =================== TIKTOK AUTO-CRAWL ===================
+const kwList = [];
+const crawlResults = [];
+
+function renderKwChips() {
+  const wrap = document.getElementById('kw-chips');
+  if (!wrap) return;
+  wrap.innerHTML = kwList.map((k,i) => `<span class="kw-chip">${k}<span class="rm" onclick="removeKw(${i})">✕</span></span>`).join('');
+}
+function addKw(kw) {
+  const v = (typeof kw === 'string' ? kw : null) || document.getElementById('kw-input').value.trim();
+  if (!v) return;
+  if (!kwList.includes(v)) kwList.push(v);
+  document.getElementById('kw-input').value = '';
+  renderKwChips();
+}
+function removeKw(i) { kwList.splice(i,1); renderKwChips(); }
+document.addEventListener('DOMContentLoaded', () => {
+  const ki = document.getElementById('kw-input');
+  if (ki) ki.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); addKw(); } });
+});
+
+function clearCrawl() {
+  crawlResults.length = 0;
+  kwList.length = 0;
+  renderKwChips();
+  document.getElementById('crawl-results-wrap').style.display = 'none';
+  document.getElementById('crawl-tip').style.display = 'block';
+  document.getElementById('crawl-progress').style.display = 'none';
+  document.getElementById('c-min-followers').value = '5000';
+  document.getElementById('c-min-views').value = '1000';
+  document.getElementById('c-min-eng').value = '3';
+}
+
+// Read criteria from the form
+function getCriteria() {
+  return {
+    keywords: [...kwList],
+    minFollowers: parseInt(document.getElementById('c-min-followers').value) || 5000,
+    minViews:     parseInt(document.getElementById('c-min-views').value) || 1000,
+    minEng:       parseFloat(document.getElementById('c-min-eng').value) || 3,
+    category:     document.getElementById('c-category').value,
+    lang:         document.getElementById('c-lang').value,
+    geo:          document.getElementById('c-geo').value,
+    limit:        parseInt(document.getElementById('c-limit').value) || 20,
+  };
+}
+
+async function startManualFetch() {
+  const raw = document.getElementById('batch-usernames').value;
+  const usernames = raw.split(/[\n,]+/).map(s=>s.trim().replace(/^@/,'')).filter(Boolean);
+  if (!usernames.length) { showToast('请先粘贴至少一个用户名'); return; }
+
+  crawlResults.length = 0;
+  document.getElementById('crawl-tip').style.display = 'none';
+  document.getElementById('crawl-results-wrap').style.display = 'none';
+  document.getElementById('crawl-progress').style.display = 'block';
+  document.getElementById('crawl-errors').style.display = 'none';
+  document.getElementById('crawl-bar').style.width = '0%';
+
+  const cr = getCriteria();
+  document.getElementById('th-followers').textContent = `>${(cr.minFollowers/1000).toFixed(0)}K`;
+  document.getElementById('th-views').textContent = `>${cr.minViews}`;
+
+  const errors = [];
+  for (let i = 0; i < usernames.length; i++) {
+    const uname = usernames[i];
+    document.getElementById('crawl-status-text').textContent = `正在抓取 @${uname}`;
+    document.getElementById('crawl-count-text').textContent = `${i+1} / ${usernames.length}`;
+    document.getElementById('crawl-bar').style.width = `${Math.round((i+1)/usernames.length*100)}%`;
+
+    const result = await fetchTikTokProfile(uname);
+    if (result.ok) {
+      const d = result.data;
+      d.estViews = d.videos > 0 ? Math.round(d.hearts / d.videos * 0.08) : 0;
+      d.selected = true;
+      crawlResults.push(d);
+    } else {
+      errors.push(`@${uname}: ${result.error}`);
+      crawlResults.push({ username: uname, error: result.error });
+    }
+    await delay(600);
+  }
+
+  document.getElementById('crawl-bar').style.width = '100%';
+  document.getElementById('crawl-status-text').textContent = `✅ 抓取完成`;
+  document.getElementById('crawl-count-text').textContent = `${usernames.length} 个`;
+
+  if (errors.length) {
+    const errDiv = document.getElementById('crawl-errors');
+    errDiv.style.display = 'block';
+    errDiv.innerHTML = '⚠ 部分抓取失败（可能账号不存在或代理限速）：<br>' + errors.join('<br>');
+  }
+  renderCrawlResults(cr);
+}
+
+function copyClaudePrompt() {
+  const keywords = (window.kwList && kwList.length) ? kwList.join('、') : (document.getElementById('c-keyword')?.value || '校园生活 Nigeria');
+  const minFollowers = document.getElementById('c-min-followers')?.value || '5000';
+  const minViews = document.getElementById('c-min-views')?.value || '1000';
+  const minEng = document.getElementById('c-min-eng')?.value || '3';
+  const category = document.getElementById('c-category')?.value || '不限';
+  const lang = document.getElementById('c-lang')?.value || '不限';
+  const geo = document.getElementById('c-geo')?.value || '';
+  const geoRate = document.getElementById('c-geo-rate')?.value || '';
+  const limit = document.getElementById('c-limit')?.value || '20';
+
+  const categoryLine = category && category !== '不限' ? `\n- 内容类型：${category}` : '';
+  const langLine = lang && lang !== '不限' ? `\n- 内容语言：${lang}` : '';
+  const geoLine = geo ? `\n- 受众城市：${geo}${geoRate ? `，覆盖率 ≥${geoRate}%` : ''}` : '';
+
+  const prompt = `请帮我在 TikTok 上采集 KOC 账号，条件如下：
+- 搜索关键词：${keywords}
+- 最低粉丝量：${minFollowers}
+- 最低均播放量：${minViews}
+- 最低互动率：${minEng}%${categoryLine}${langLine}${geoLine}
+- 采集数量：${limit} 个
+
+请在 TikTok 搜索用户，访问每个账号主页，收集：账号名(username)、昵称、粉丝数、获赞数、视频数、简介、地区。
+采集完成后，将结果以 JSON 格式整理并导入 KOC 工作流工具。`;
+  navigator.clipboard.writeText(prompt).then(() => {
+    const toast = document.getElementById('claude-prompt-toast');
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 4000);
+  }).catch(() => {
+    alert('请手动复制以下指令：\n\n' + prompt);
+  });
+}
+
+async function startAutoCrawl() {
+  const cr = getCriteria();
+  if (!cr.keywords.length) {
+    // auto-add default keywords if none set
+    ['campus life', 'student tech review', 'smartphone unboxing'].forEach(k => kwList.push(k));
+    renderKwChips();
+    cr.keywords = [...kwList];
+  }
+
+  crawlResults.length = 0;
+  document.getElementById('crawl-tip').style.display = 'none';
+  document.getElementById('crawl-results-wrap').style.display = 'none';
+  document.getElementById('crawl-progress').style.display = 'block';
+  document.getElementById('crawl-errors').style.display = 'none';
+  document.getElementById('crawl-bar').style.width = '5%';
+
+  // Update threshold hints in table header
+  document.getElementById('th-followers').textContent = `>${(cr.minFollowers/1000).toFixed(0)}K`;
+  document.getElementById('th-views').textContent = `>${cr.minViews}`;
+
+  // Step 1: Search TikTok for users matching keywords
+  const searchQuery = cr.keywords.join(' ');
+  document.getElementById('crawl-status-text').textContent = `🔍 搜索关键词：${searchQuery}`;
+  document.getElementById('crawl-count-text').textContent = '';
+
+  const candidates = await searchTikTokUsers(searchQuery, cr.limit * 3);
+
+  if (!candidates.length) {
+    document.getElementById('crawl-status-text').textContent = '⚠ 未能从 TikTok 搜索到账号（网络限制）';
+    document.getElementById('crawl-bar').style.width = '100%';
+    const errDiv = document.getElementById('crawl-errors');
+    errDiv.style.display = 'block';
+    errDiv.innerHTML = '当前网络无法访问 TikTok，请切换到可正常访问 TikTok 的网络后重试。';
+    return;
+  }
+
+  document.getElementById('crawl-status-text').textContent = `找到 ${candidates.length} 个候选账号，正在逐一获取资料并筛选...`;
+  document.getElementById('crawl-bar').style.width = '20%';
+
+  // Step 2: Fetch each profile and filter by criteria
+  let passed = 0, fetched = 0;
+  for (const uname of candidates) {
+    if (passed >= cr.limit) break;
+    fetched++;
+    document.getElementById('crawl-status-text').textContent = `正在检查 @${uname}（${fetched}/${candidates.length}）`;
+    document.getElementById('crawl-count-text').textContent = `已达标 ${passed} / 目标 ${cr.limit}`;
+    document.getElementById('crawl-bar').style.width = `${20 + Math.round(fetched/candidates.length*75)}%`;
+
+    const result = await fetchTikTokProfile(uname);
+    if (result.ok) {
+      const d = result.data;
+      const estViews = d.videos > 0 ? Math.round(d.hearts / d.videos * 0.08) : 0;
+      // Apply criteria filters
+      if (d.followers < cr.minFollowers) { await delay(400); continue; }
+      if (cr.minViews > 0 && estViews > 0 && estViews < cr.minViews) { await delay(400); continue; }
+      d.estViews = estViews;
+      d.selected = true;
+      // Pre-fill criteria-matched fields
+      if (cr.category) d.category = cr.category;
+      if (cr.lang) d.lang = cr.lang;
+      if (cr.geo) d.geo = cr.geo;
+      if (!d.geo) d.geo = 'unknown';
+      crawlResults.push(d);
+      passed++;
+    }
+    await delay(600);
+  }
+
+  document.getElementById('crawl-bar').style.width = '100%';
+  document.getElementById('crawl-status-text').textContent = `✅ 采集完成`;
+  document.getElementById('crawl-count-text').textContent = `达标 ${passed} 个 / 扫描 ${fetched} 个`;
+
+  if (!crawlResults.length) {
+    const errDiv = document.getElementById('crawl-errors');
+    errDiv.style.display = 'block';
+    errDiv.innerHTML = `扫描了 ${fetched} 个账号，均未达到筛选条件（粉丝>${cr.minFollowers}）。可尝试降低门槛或更换关键词。`;
+  }
+
+  renderCrawlResults(cr);
+}
+
+// Search TikTok for user accounts matching a query — returns list of usernames
+async function searchTikTokUsers(query, maxCount) {
+  const url = `https://www.tiktok.com/search/user?q=${encodeURIComponent(query)}`;
+  const PROXIES = [
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => `https://thingproxy.freeboard.io/fetch/${u}`,
+  ];
+  for (const proxyFn of PROXIES) {
+    try {
+      const res = await fetch(proxyFn(url), { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) continue;
+      const html = await res.text();
+      const usernames = parseTikTokSearchHtml(html, maxCount);
+      if (usernames.length) return usernames;
+    } catch(e) {}
+  }
+  return [];
+}
+
+function parseTikTokSearchHtml(html, max) {
+  const found = new Set();
+  // Pattern 1: uniqueId in JSON blobs
+  const matches = html.matchAll(/"uniqueId"\s*:\s*"([^"]{3,40})"/g);
+  for (const m of matches) {
+    found.add(m[1]);
+    if (found.size >= max) break;
+  }
+  // Pattern 2: /@username in href attributes
+  if (found.size < 5) {
+    const hrefMatches = html.matchAll(/\/@([A-Za-z0-9_.]{3,30})["'\/]/g);
+    for (const m of hrefMatches) {
+      found.add(m[1]);
+      if (found.size >= max) break;
+    }
+  }
+  return [...found].slice(0, max);
+}
+
+async function fetchTikTokProfile(username) {
+  const url = `https://www.tiktok.com/@${username}`;
+  const PROXIES = [
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => `https://thingproxy.freeboard.io/fetch/${u}`,
+  ];
+  for (const proxyFn of PROXIES) {
+    try {
+      const res = await fetch(proxyFn(url), { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) continue;
+      const html = await res.text();
+      const data = parseTikTokHtml(html, username);
+      if (data) return { ok: true, data };
+    } catch(e) {}
+  }
+  return { ok: false, error: '无法抓取' };
+}
+
+function parseTikTokHtml(html, username) {
+  let followers = null, hearts = null, videos = null, nickname = '', bio = '', region = '';
+  const scriptMatches = html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g);
+  for (const sm of scriptMatches) {
+    const txt = sm[1];
+    if (txt.includes('followerCount')) {
+      try {
+        const idx = txt.indexOf('followerCount');
+        const sub = txt.substring(Math.max(0, idx-500), idx+500);
+        const fc = sub.match(/"followerCount"\s*:\s*(\d+)/);
+        const hc = sub.match(/"heartCount"\s*:\s*(\d+)/);
+        const vc = sub.match(/"videoCount"\s*:\s*(\d+)/);
+        if (fc) followers = parseInt(fc[1]);
+        if (hc) hearts = parseInt(hc[1]);
+        if (vc) videos = parseInt(vc[1]);
+      } catch(e) {}
+      const nn = txt.match(/"nickname"\s*:\s*"([^"]+)"/);
+      if (nn) nickname = nn[1];
+      const sg = txt.match(/"signature"\s*:\s*"([^"]+)"/);
+      if (sg) bio = sg[1];
+      const rg = txt.match(/"region"\s*:\s*"([A-Z]{2})"/);
+      if (rg) region = rg[1];
+      if (followers !== null) break;
+    }
+  }
+  if (followers === null) {
+    const fmatch = html.match(/(\d[\d,.]+[KMk]?)\s*[Ff]ollowers/);
+    if (fmatch) followers = parseKM(fmatch[1]);
+    const lmatch = html.match(/(\d[\d,.]+[KMk]?)\s*[Ll]ikes/);
+    if (lmatch) hearts = parseKM(lmatch[1]);
+  }
+  if (followers === null) return null;
+  return {
+    username, nickname: nickname || username,
+    followers, hearts: hearts||0, videos: videos||0,
+    region, bio: bio.replace(/\\n/g,' ').substring(0,80),
+    profileUrl: `https://www.tiktok.com/@${username}`,
+    selected: true,
+  };
+}
+
+function parseKM(s) {
+  s = s.replace(/,/g,'');
+  if (/[Kk]$/.test(s)) return Math.round(parseFloat(s)*1000);
+  if (/[Mm]$/.test(s)) return Math.round(parseFloat(s)*1000000);
+  return parseInt(s)||0;
+}
+
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+function renderCrawlResults(cr) {
+  cr = cr || getCriteria();
+  document.getElementById('crawl-results-wrap').style.display = 'block';
+  document.getElementById('crawl-result-count').textContent = `（${crawlResults.length} 个达标账号）`;
+  document.getElementById('crawl-filtered-note').textContent =
+    `粉丝>${cr.minFollowers.toLocaleString()} · 关键词：${cr.keywords.join(', ')}`;
+
+  const tbody = document.getElementById('crawl-tbody');
+  tbody.innerHTML = crawlResults.map((r,i) => {
+    const estViews = r.estViews || (r.videos > 0 ? Math.round(r.hearts/r.videos*0.08) : 0);
+    const fOk = r.followers >= cr.minFollowers;
+    const vOk = cr.minViews === 0 || estViews === 0 || estViews >= cr.minViews;
+    const fCol = fOk
+      ? `<span style="color:#27ae60;font-weight:600;">${fmtNum(r.followers)}</span>`
+      : `<span style="color:#e74c3c;">${fmtNum(r.followers)}</span>`;
+    const vCol = vOk
+      ? `<span style="color:#27ae60;">${estViews ? fmtNum(estViews)+'*' : '—'}</span>`
+      : `<span style="color:#e74c3c;">${fmtNum(estViews)}*</span>`;
+    const allOk = fOk && vOk;
+    return `<tr style="${!allOk?'opacity:.6':''}">
+      <td><input type="checkbox" class="crawl-row-check" data-i="${i}" ${r.selected&&allOk?'checked':''}></td>
+      <td style="white-space:nowrap;">
+        <a href="${r.profileUrl}" target="_blank" style="color:var(--brand);text-decoration:none;font-weight:600;">@${r.username}</a>
+        <div style="font-size:10px;color:var(--text-3);">${r.nickname}</div>
+        ${r.bio?`<div style="font-size:10px;color:var(--text-3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.bio}">${r.bio}</div>`:''}
+      </td>
+      <td>${fCol}</td>
+      <td>${estViews?vCol+'<div style="font-size:10px;color:var(--text-3);">*估算</div>':'<span style="color:var(--text-3);">—</span>'}</td>
+      <td style="color:var(--text-3);">${fmtNum(r.hearts)}</td>
+      <td style="color:var(--text-3);">${r.videos}</td>
+      <td>${r.region||'—'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--text-3);" title="${r.bio}">${r.bio||'—'}</td>
+      <td>${allOk
+        ? '<span style="color:#27ae60;font-weight:600;">✅ 达标</span>'
+        : '<span style="color:#e74c3c;">❌ 不达标</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.crawl-row-check').forEach(cb => {
+    cb.addEventListener('change', function() {
+      crawlResults[parseInt(this.dataset.i)].selected = this.checked;
+    });
+  });
+}
+
+function selectAllCrawl(val) {
+  crawlResults.forEach(r => { r.selected = val; });
+  document.querySelectorAll('.crawl-row-check').forEach(cb => cb.checked = val);
+  document.getElementById('crawl-check-all').checked = val;
+}
+
+function importSelected() {
+  const toImport = crawlResults.filter(r => !r.error && r.selected);
+  if (!toImport.length) { showToast('请先选择要导入的账号'); return; }
+
+  toImport.forEach(r => {
+    const avgViews = r.videos > 0 ? Math.round(r.hearts / r.videos * 0.1) : 0; // rough estimate
+    const koc = {
+      id: Date.now() + Math.random(),
+      name: r.nickname,
+      username: r.username,
+      url: r.profileUrl,
+      whatsapp: '', email: '', city: '', school: '', grade: '',
+      v1: r.followers, v2: 0, v3: 0, v4: 0, v5: 0,
+      avgViews: avgViews,
+      likes: 0, comments: 0, shares: 0,
+      growth: r.growth||'unknown', freq: r.freq||'unknown',
+      age: r.age||'unknown', lang: r.lang||'English', category: r.category||'lifestyle',
+      audAge: r.audAge||'unknown', geo: r.geo||(r.region === 'NG' ? '50+' : 'unknown'),
+      hasTechContent: r.hasTechContent||'no', address: '',
+      brandExp: 'no', hasIG: 'no', source: 'TikTok自动采集', risks: '',
+      platform: 'tiktok',
+      addedAt: new Date().toISOString(),
+    };
+    koc.engRate = koc.avgViews > 0 ? ((koc.likes+koc.comments+koc.shares)/koc.avgViews*100) : 0;
+    const scored = scoreKOC(koc);
+    koc.score = scored.score;
+    koc.verdict = scored.verdict;
+    koc.riskFlags = scored.riskFlags;
+    kocDB.push(koc);
+  });
+
+  showToast(`✅ 已导入 ${toImport.length} 个 KOC，请前往「筛选结果」查看`);
+  // switch to screening panel
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="panel-screening"]').classList.add('active');
+  document.getElementById('panel-screening').classList.add('active');
+  renderScreening();
+}
+
+// =================== UTILS ===================
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:24px;right:24px;background:#1A1A1A;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeIn 0.2s ease;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+initApp();
+</script>
+</body>
+</html>
