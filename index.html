@@ -1413,6 +1413,7 @@ function renderScreening() {
   const tbody = document.getElementById('screening-tbody');
   const empty = document.getElementById('screening-empty');
 
+  updateStats();
   if (filtered.length === 0) {
     tbody.innerHTML = '';
     empty.style.display = '';
