@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Infinix Hot 70 · KOC 筛选工作流</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Supabase removed: now using localStorage -->
 <style>
   :root {
     --brand: #FF6B00;
@@ -854,59 +854,18 @@
 </div>
 
 <script>
-// =================== SUPABASE ===================
-const _SB = window.supabase.createClient(
-  'https://twsgeckovdplcbgrjjne.supabase.co',
-  'sb_publishable_bBp_10JShxmiYvYxHrTKTQ_n7yh4gzd'
-);
+// =================== LOCAL STORAGE ===================
+const LS_KEY = 'koc_workflow_v1';
 
-function _kocToRow(k) {
-  return {
-    platform: k.platform, name: k.name, username: k.username, url: k.url,
-    city: k.city, whatsapp: k.whatsapp, tier: k.tier, category: k.category,
-    ksp: k.ksp||'', script: k.script||'', collab_fee: k.collabFee||0,
-    post_date: k.postDate||'', post_link: k.postLink||'',
-    act_views: k.actViews||0, act_engagement: k.actEngagement||0,
-    followers: k.followers, avg_views: k.avgViews, engagement_rate: k.engagementRate,
-    bio: k.bio, region: k.region, geo_label: k.geoLabel, language: k.language,
-    source_type: k.source_type, score: k.score, status: k.status, verdict: k.verdict,
-    has_tech_content: k.hasTechContent,
-    manual_risks: Array.isArray(k.manualRisks) ? k.manualRisks.join(',') : '',
-    added_at: k.addedAt,
-  };
+function _lsSave() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(kocData)); } catch(e) {}
 }
 
-function _rowToKoc(r) {
-  return {
-    id: r.id, platform: r.platform, name: r.name, username: r.username, url: r.url,
-    city: r.city||'', whatsapp: r.whatsapp||'', tier: r.tier, category: r.category,
-    ksp: r.ksp||'', script: r.script||'', collabFee: r.collab_fee||0,
-    postDate: r.post_date||'', postLink: r.post_link||'',
-    actViews: r.act_views||0, actEngagement: r.act_engagement||0,
-    followers: r.followers, avgViews: r.avg_views, engagementRate: r.engagement_rate,
-    bio: r.bio||'', region: r.region||'', geoLabel: r.geo_label||'', language: r.language||'',
-    source_type: r.source_type||'crawl', score: r.score, status: r.status, verdict: r.verdict,
-    hasTechContent: r.has_tech_content||'',
-    manualRisks: r.manual_risks ? r.manual_risks.split(',').filter(Boolean) : [],
-    addedAt: r.added_at||r.created_at,
-  };
-}
-
-async function _sbSave(koc) {
-  const { error } = await _SB.from('koc_list').insert(_kocToRow(koc));
-  if (error) console.error('Supabase insert error:', error);
-}
-
-async function _sbUpdate(id, fields) {
-  const row = {};
-  if (fields.collabFee !== undefined) row.collab_fee = fields.collabFee;
-  if (fields.postDate !== undefined) row.post_date = fields.postDate;
-  if (fields.postLink !== undefined) row.post_link = fields.postLink;
-  if (fields.actViews !== undefined) row.act_views = fields.actViews;
-  if (fields.actEngagement !== undefined) row.act_engagement = fields.actEngagement;
-  if (fields.ksp !== undefined) row.ksp = fields.ksp;
-  if (fields.script !== undefined) row.script = fields.script;
-  if (Object.keys(row).length) await _SB.from('koc_list').update(row).eq('id', id);
+function _lsLoad() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
 }
 
 // =================== DATA STORE ===================
@@ -1057,38 +1016,15 @@ let trackingList = [];
 let briefs = {};
 let currentPlatform = 'tiktok';
 
-async function initApp() {
-  const loadingEl = document.createElement('div');
-  loadingEl.id = 'db-loading';
-  loadingEl.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;font-size:16px;color:#666;';
-  loadingEl.textContent = '正在加载数据库数据…';
-  document.body.appendChild(loadingEl);
-
-  const { data, error } = await _SB.from('koc_list').select('*').order('created_at', { ascending: true });
-  if (error) {
-    console.error('Supabase load error:', error);
-    loadingEl.textContent = '数据库连接失败，使用本地数据';
-    setTimeout(() => loadingEl.remove(), 2000);
-    kocData = [..._initKocData(), ..._initKocDataLahoreSteak(), ..._initKocDataLagosLifestyle()];
-    renderInputTable();
-    return;
-  }
-
-  if (data && data.length > 0) {
-    kocData = data.map(_rowToKoc);
+function initApp() {
+  const saved = _lsLoad();
+  if (saved && saved.length > 0) {
+    kocData = saved;
   } else {
-    // 首次使用：把预置数据写入数据库
-    const seed = [..._initKocData(), ..._initKocDataLahoreSteak(), ..._initKocDataLagosLifestyle()];
-    const rows = seed.map(_kocToRow);
-    const { error: seedErr } = await _SB.from('koc_list').insert(rows);
-    if (seedErr) console.error('Seed error:', seedErr);
-    const { data: seeded } = await _SB.from('koc_list').select('*').order('created_at', { ascending: true });
-    kocData = seeded ? seeded.map(_rowToKoc) : seed;
+    kocData = [..._initKocData(), ..._initKocDataLahoreSteak(), ..._initKocDataLagosLifestyle()];
+    _lsSave();
   }
-
-  loadingEl.remove();
   renderInputTable();
-  // Default to Brief tab as first view
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelector('[data-panel="panel-brief"]').classList.add('active');
@@ -1411,7 +1347,7 @@ document.getElementById('btn-add-koc').onclick = () => {
   const result = scoreKOC(koc);
   koc = { ...koc, ...result };
   kocData.push(koc);
-  _sbSave(koc);
+  _lsSave();
   renderInputTable();
   document.getElementById('manual-form').style.display = 'none';
   clearForm();
@@ -1456,6 +1392,7 @@ function renderInputTable() {
 
 function removeKOC(i) {
   kocData.splice(i, 1);
+  _lsSave();
   renderInputTable();
   updateStats();
 }
@@ -1628,6 +1565,7 @@ function toggleTag(id, tag, el) {
     k.tags.push(tag);
     el.style.background = 'var(--brand-light)'; el.style.color = 'var(--brand)'; el.style.borderColor = 'var(--brand)';
   }
+  _lsSave();
   renderScreening();
 }
 
@@ -1640,6 +1578,7 @@ function addCustomTag(id) {
   if (!Array.isArray(k.tags)) k.tags = [];
   if (!k.tags.includes(tag)) k.tags.push(tag);
   input.value = '';
+  _lsSave();
   renderScreening();
 }
 
@@ -1647,6 +1586,7 @@ function removeTag(id, tag) {
   const k = kocData.find(x => String(x.id) === String(id));
   if (!k || !Array.isArray(k.tags)) return;
   k.tags = k.tags.filter(t => t !== tag);
+  _lsSave();
   renderScreening();
 }
 
@@ -2453,7 +2393,7 @@ document.getElementById('btn-import-csv').onclick = () => {
     kocData.push({ ...koc, ...result });
     importedCount++;
   });
-
+  _lsSave();
   renderInputTable();
   updateStats();
   document.getElementById('upload-feedback').style.display = 'none';
@@ -2481,7 +2421,7 @@ document.getElementById('btn-load-sample').onclick = () => {
     const result = scoreKOC(k);
     kocData.push({ ...k, ...result });
   });
-
+  _lsSave();
   renderInputTable();
   updateStats();
   showToast('已加载 6 条示例 KOC 数据');
