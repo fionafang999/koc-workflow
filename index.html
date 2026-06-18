@@ -444,9 +444,8 @@
       <!-- 搜索关键词 -->
       <div style="grid-column:1/-1;">
         <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">搜索关键词 <span style="color:var(--text-3);font-weight:400;">（系统将用这些词在 TikTok 搜索账号）</span></div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);min-height:36px;cursor:text;" onclick="document.getElementById('kw-input').focus()">
-          <div style="display:contents;" id="kw-chips"></div>
-          <input id="kw-input" placeholder="输入关键词，回车添加" style="border:none;outline:none;font-size:12px;background:transparent;color:var(--text-1);flex:1;min-width:120px;padding:0;">
+        <div id="kw-input-wrap" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);min-height:36px;cursor:text;" onclick="document.getElementById('kw-input').focus()">
+          <input id="kw-input" placeholder="输入关键词，回车添加" style="border:none;outline:none;font-size:12px;background:transparent;color:var(--text-1);flex:1;min-width:120px;padding:0;" onkeydown="if(event.key==='Enter'){event.preventDefault();addKw();}">
         </div>
         <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
           <span style="font-size:11px;color:var(--text-3);">快速添加：</span>
@@ -2615,9 +2614,18 @@ const kwList = [];
 const crawlResults = [];
 
 function renderKwChips() {
-  const wrap = document.getElementById('kw-chips');
-  if (!wrap) return;
-  wrap.innerHTML = kwList.map((k,i) => `<span class="kw-chip">${k}<span class="rm" onclick="removeKw(${i})">✕</span></span>`).join('');
+  const wrap = document.getElementById('kw-input-wrap');
+  const input = document.getElementById('kw-input');
+  if (!wrap || !input) return;
+  // remove old chip spans, keep the input
+  wrap.querySelectorAll('.kw-chip').forEach(el => el.remove());
+  // insert chips before the input
+  kwList.forEach((k, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'kw-chip';
+    chip.innerHTML = `${k}<span class="rm" onclick="removeKw(${i})">✕</span>`;
+    wrap.insertBefore(chip, input);
+  });
 }
 function addKw(kw) {
   const v = (typeof kw === 'string' ? kw : null) || document.getElementById('kw-input').value.trim();
@@ -2626,11 +2634,7 @@ function addKw(kw) {
   document.getElementById('kw-input').value = '';
   renderKwChips();
 }
-function removeKw(i) { kwList.splice(i,1); renderKwChips(); }
-document.addEventListener('DOMContentLoaded', () => {
-  const ki = document.getElementById('kw-input');
-  if (ki) ki.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); addKw(); } });
-});
+function removeKw(i) { kwList.splice(i, 1); renderKwChips(); }
 
 function clearCrawl() {
   crawlResults.length = 0;
