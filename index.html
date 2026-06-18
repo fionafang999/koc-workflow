@@ -2617,18 +2617,21 @@ function renderKwChips() {
   const wrap = document.getElementById('kw-input-wrap');
   const input = document.getElementById('kw-input');
   if (!wrap || !input) return;
-  // remove old chip spans, keep the input
   wrap.querySelectorAll('.kw-chip').forEach(el => el.remove());
-  // insert chips before the input
   kwList.forEach((k, i) => {
     const chip = document.createElement('span');
     chip.className = 'kw-chip';
-    chip.innerHTML = `${k}<span class="rm" onclick="removeKw(${i})">✕</span>`;
+    chip.textContent = k;
+    const rm = document.createElement('span');
+    rm.className = 'rm';
+    rm.textContent = '✕';
+    rm.onclick = (e) => { e.stopPropagation(); removeKw(i); };
+    chip.appendChild(rm);
     wrap.insertBefore(chip, input);
   });
 }
 function addKw(kw) {
-  const v = (typeof kw === 'string' ? kw : null) || document.getElementById('kw-input').value.trim();
+  const v = (typeof kw === 'string' ? kw : '') || document.getElementById('kw-input').value.trim();
   if (!v) return;
   if (!kwList.includes(v)) kwList.push(v);
   document.getElementById('kw-input').value = '';
@@ -2711,7 +2714,7 @@ async function startManualFetch() {
 }
 
 function copyClaudePrompt() {
-  const keywords = (window.kwList && kwList.length) ? kwList.join('、') : (document.getElementById('c-keyword')?.value || '校园生活 Nigeria');
+  const keywords = kwList.length ? kwList.join('、') : '（未填写关键词）';
   const minFollowers = document.getElementById('c-min-followers')?.value || '5000';
   const minViews = document.getElementById('c-min-views')?.value || '1000';
   const minEng = document.getElementById('c-min-eng')?.value || '3';
