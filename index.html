@@ -202,7 +202,7 @@
 <header class="app-header">
   <span class="logo-badge">INFINIX</span>
   <h1>Hot 70 · KOC 筛选工作流</h1>
-  <span class="header-meta">Global KOC Recruitment</span>
+  <span class="header-meta">Global KOC Recruitment &nbsp;·&nbsp; v0618</span>
 </header>
 
 <nav class="app-nav">
@@ -444,16 +444,18 @@
       <!-- 搜索关键词 -->
       <div style="grid-column:1/-1;">
         <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">搜索关键词 <span style="color:var(--text-3);font-weight:400;">（系统将用这些词在 TikTok 搜索账号）</span></div>
-        <div id="kw-input-wrap" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);min-height:36px;cursor:text;" onclick="document.getElementById('kw-input').focus()">
-          <input id="kw-input" placeholder="输入关键词，回车添加" style="border:none;outline:none;font-size:12px;background:transparent;color:var(--text-1);flex:1;min-width:120px;padding:0;" onkeydown="if(event.key==='Enter'){event.preventDefault();addKw();}">
+        <!-- chips live here, rendered by renderKwChips() -->
+        <div id="kw-chips-row" style="display:flex;flex-wrap:wrap;gap:6px;min-height:0;margin-bottom:4px;"></div>
+        <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:6px;background:var(--bg);padding:4px 10px;">
+          <input id="kw-input" placeholder="输入关键词，回车添加" style="border:none;outline:none;font-size:12px;background:transparent;color:var(--text-1);flex:1;min-width:120px;padding:4px 0;" onkeydown="if(event.key==='Enter'){event.preventDefault();addKw();}">
         </div>
         <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
           <span style="font-size:11px;color:var(--text-3);">快速添加：</span>
-          <span class="kw-suggest" id="kws-campus" onclick="addKw('campus life')">campus life</span>
-          <span class="kw-suggest" id="kws-student" onclick="addKw('student tech review')">student tech review</span>
-          <span class="kw-suggest" id="kws-unboxing" onclick="addKw('smartphone unboxing')">smartphone unboxing</span>
-          <span class="kw-suggest" id="kws-vlog" onclick="addKw('university vlog')">university vlog</span>
-          <span class="kw-suggest" id="kws-lifestyle" onclick="addKw('tech lifestyle')">tech lifestyle</span>
+          <span class="kw-suggest" onclick="addKw('campus life')">campus life</span>
+          <span class="kw-suggest" onclick="addKw('student tech review')">student tech review</span>
+          <span class="kw-suggest" onclick="addKw('smartphone unboxing')">smartphone unboxing</span>
+          <span class="kw-suggest" onclick="addKw('university vlog')">university vlog</span>
+          <span class="kw-suggest" onclick="addKw('tech lifestyle')">tech lifestyle</span>
         </div>
       </div>
 
@@ -2614,21 +2616,12 @@ const kwList = [];
 const crawlResults = [];
 
 function renderKwChips() {
-  const wrap = document.getElementById('kw-input-wrap');
-  const input = document.getElementById('kw-input');
-  if (!wrap || !input) return;
-  wrap.querySelectorAll('.kw-chip').forEach(el => el.remove());
-  kwList.forEach((k, i) => {
-    const chip = document.createElement('span');
-    chip.className = 'kw-chip';
-    chip.textContent = k;
-    const rm = document.createElement('span');
-    rm.className = 'rm';
-    rm.textContent = '✕';
-    rm.onclick = (e) => { e.stopPropagation(); removeKw(i); };
-    chip.appendChild(rm);
-    wrap.insertBefore(chip, input);
-  });
+  const row = document.getElementById('kw-chips-row');
+  if (!row) return;
+  row.innerHTML = kwList.map((k, i) =>
+    `<span class="kw-chip">${k} <span class="rm" onclick="removeKw(${i})">✕</span></span>`
+  ).join('');
+  row.style.display = kwList.length ? 'flex' : 'none';
 }
 function addKw(kw) {
   const v = (typeof kw === 'string' ? kw : '') || document.getElementById('kw-input').value.trim();
