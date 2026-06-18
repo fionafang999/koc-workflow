@@ -1558,7 +1558,7 @@ function renderScreening() {
       <td style="max-width:160px;">${riskHtml}</td>
       <td>
         <div style="display:flex;gap:4px;flex-wrap:wrap;">
-          <button class="btn btn-sm" onclick="showDetail('${k.id}')">详情</button>
+          <button class="btn btn-sm" onclick="showDetail('${k.id}')">${k.videoScript ? '📝 详情' : '详情'}</button>
           ${k.status !== 'fail' ? `<button class="btn btn-sm btn-primary" onclick="generateBrief('${k.id}')">Brief</button>` : ''}
           ${k.status !== 'fail' ? `<button class="btn btn-sm" onclick="addToTracking('${k.id}')" style="border-color:var(--pass);color:var(--pass);" title="加入 KOC Tracking List">+ Tracking</button>` : ''}
         </div>
@@ -2285,13 +2285,44 @@ function showDetail(id) {
       ${k.failReasons.map(r=>`<div style="font-size:12px;color:var(--fail);padding:3px 0;">• ${r}</div>`).join('')}
     </div>` : ''}
 
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;">
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <div style="font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px;">📝 定制脚本</div>
+      <textarea id="script-textarea-${k.id}"
+        placeholder="将 Claude 生成的脚本粘贴到这里，点「保存脚本」即可同步到工具中..."
+        style="width:100%;min-height:160px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:12px;line-height:1.6;background:var(--bg);color:var(--text-1);resize:vertical;font-family:inherit;box-sizing:border-box;"
+      >${k.videoScript || ''}</textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+        <button class="btn btn-primary btn-sm" onclick="saveScript('${k.id}')">💾 保存脚本</button>
+        ${k.videoScript ? `<button class="btn btn-sm" onclick="copyScript('${k.id}')">📋 复制脚本</button>` : ''}
+        <span id="script-save-hint-${k.id}" style="font-size:11px;color:var(--pass);display:none;">✅ 已保存</span>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px;">
       ${k.status !== 'fail' ? `<button class="btn btn-primary btn-sm" onclick="generateBrief('${k.id}');closeModal();">生成 Brief</button>` : ''}
       <button class="btn btn-sm" onclick="closeModal()">关闭</button>
     </div>
   `;
 
   document.getElementById('detail-modal').classList.add('open');
+}
+
+function saveScript(id) {
+  const k = kocData.find(x => String(x.id) === String(id));
+  if (!k) return;
+  const ta = document.getElementById('script-textarea-' + id);
+  if (!ta) return;
+  k.videoScript = ta.value.trim();
+  _lsSave();
+  const hint = document.getElementById('script-save-hint-' + id);
+  if (hint) { hint.style.display = 'inline'; setTimeout(() => hint.style.display = 'none', 2000); }
+  renderScreening();
+}
+
+function copyScript(id) {
+  const k = kocData.find(x => String(x.id) === String(id));
+  if (!k || !k.videoScript) return;
+  navigator.clipboard.writeText(k.videoScript).then(() => showToast('✅ 脚本已复制'));
 }
 
 function closeModal() {
