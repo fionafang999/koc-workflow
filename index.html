@@ -443,21 +443,16 @@
 
       <!-- 搜索关键词 -->
       <div style="grid-column:1/-1;">
-        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">搜索关键词 <span style="color:var(--text-3);font-weight:400;">（系统将用这些词在 TikTok 搜索账号）</span></div>
-        <!-- chips live here, rendered by renderKwChips() -->
-        <div id="kw-chips-row" style="display:flex;flex-wrap:wrap;gap:6px;min-height:0;margin-bottom:4px;"></div>
-        <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:6px;background:var(--bg);padding:4px 10px;">
-          <input id="kw-input" placeholder="输入关键词，回车添加" style="border:none;outline:none;font-size:12px;background:transparent;color:var(--text-1);flex:1;min-width:120px;padding:4px 0;" onkeydown="if(event.key==='Enter'){event.preventDefault();addKw();}">
-        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;">搜索关键词 <span style="color:var(--text-3);font-weight:400;">（多个关键词用逗号分隔）</span></div>
+        <input id="kw-input" placeholder="例：campus life, vlog, student tech review" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text-1);box-sizing:border-box;">
         <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
           <span style="font-size:11px;color:var(--text-3);">快速添加：</span>
-          <span class="kw-suggest" onclick="addKw('campus life')">campus life</span>
-          <span class="kw-suggest" onclick="addKw('student tech review')">student tech review</span>
-          <span class="kw-suggest" onclick="addKw('smartphone unboxing')">smartphone unboxing</span>
-          <span class="kw-suggest" onclick="addKw('university vlog')">university vlog</span>
-          <span class="kw-suggest" onclick="addKw('tech lifestyle')">tech lifestyle</span>
+          <span class="kw-suggest" onclick="kwAppend('campus life')">campus life</span>
+          <span class="kw-suggest" onclick="kwAppend('student tech review')">student tech review</span>
+          <span class="kw-suggest" onclick="kwAppend('smartphone unboxing')">smartphone unboxing</span>
+          <span class="kw-suggest" onclick="kwAppend('university vlog')">university vlog</span>
+          <span class="kw-suggest" onclick="kwAppend('tech lifestyle')">tech lifestyle</span>
         </div>
-        <div id="kw-debug" style="margin-top:4px;font-size:11px;color:var(--text-3);"></div>
       </div>
 
       <!-- 数据门槛 -->
@@ -2618,27 +2613,22 @@ function downloadFile(filename, content, type) {
 
 // =================== TIKTOK AUTO-CRAWL ===================
 
-function renderKwChips() {
-  const row = document.getElementById('kw-chips-row');
-  if (!row) return;
-  row.innerHTML = kwList.map((k, i) =>
-    `<span class="kw-chip">${k} <span class="rm" onclick="removeKw(${i})">✕</span></span>`
-  ).join('');
-  row.style.display = kwList.length ? 'flex' : 'none';
+function kwAppend(kw) {
+  const el = document.getElementById('kw-input');
+  if (!el) return;
+  const cur = el.value.trim();
+  const parts = cur ? cur.split(',').map(s => s.trim()).filter(Boolean) : [];
+  if (!parts.includes(kw)) parts.push(kw);
+  el.value = parts.join(', ');
 }
-function addKw(kw) {
-  const v = (typeof kw === 'string' ? kw : '') || document.getElementById('kw-input').value.trim();
-  if (!v) return;
-  if (!kwList.includes(v)) kwList.push(v);
-  document.getElementById('kw-input').value = '';
-  renderKwChips();
+function getKwList() {
+  const val = document.getElementById('kw-input')?.value || '';
+  return val.split(',').map(s => s.trim()).filter(Boolean);
 }
-function removeKw(i) { kwList.splice(i, 1); renderKwChips(); }
 
 function clearCrawl() {
   crawlResults.length = 0;
-  kwList.length = 0;
-  renderKwChips();
+  const ki = document.getElementById('kw-input'); if (ki) ki.value = '';
   document.getElementById('crawl-results-wrap').style.display = 'none';
   document.getElementById('crawl-tip').style.display = 'block';
   document.getElementById('crawl-progress').style.display = 'none';
@@ -2650,7 +2640,7 @@ function clearCrawl() {
 // Read criteria from the form
 function getCriteria() {
   return {
-    keywords: [...kwList],
+    keywords: getKwList(),
     minFollowers: parseInt(document.getElementById('c-min-followers').value) || 5000,
     minViews:     parseInt(document.getElementById('c-min-views').value) || 1000,
     minEng:       parseFloat(document.getElementById('c-min-eng').value) || 3,
@@ -2710,7 +2700,7 @@ async function startManualFetch() {
 }
 
 function copyClaudePrompt() {
-  const keywords = kwList.length ? kwList.join('、') : '（未填写关键词）';
+  const keywords = getKwList().join('、') || '（未填写关键词）';
   const minFollowers = document.getElementById('c-min-followers')?.value || '5000';
   const minViews = document.getElementById('c-min-views')?.value || '1000';
   const minEng = document.getElementById('c-min-eng')?.value || '3';
@@ -2745,10 +2735,9 @@ function copyClaudePrompt() {
 async function startAutoCrawl() {
   const cr = getCriteria();
   if (!cr.keywords.length) {
-    // auto-add default keywords if none set
-    ['campus life', 'student tech review', 'smartphone unboxing'].forEach(k => kwList.push(k));
-    renderKwChips();
-    cr.keywords = [...kwList];
+    const defaults = 'campus life, student tech review, smartphone unboxing';
+    const ki = document.getElementById('kw-input'); if (ki) ki.value = defaults;
+    cr.keywords = getKwList();
   }
 
   crawlResults.length = 0;
