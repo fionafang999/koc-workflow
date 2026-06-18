@@ -195,6 +195,389 @@
   .status-ok { color:#27ae60;font-weight:600; }
   .status-err { color:#e74c3c; }
   .status-loading { color:var(--brand); }
+
+  /* 2026 visual refresh inspired by the Hot 70 KOC workflow boards */
+  :root {
+    --brand: #4B32FF;
+    --brand-light: #F1EDFF;
+    --brand-mid: #7B4DFF;
+    --accent-pink: #E533C7;
+    --accent-blue: #064DFF;
+    --accent-cyan: #65E2FF;
+    --accent-green: #4CCB73;
+    --bg: #F8F9FD;
+    --surface: #FFFFFF;
+    --border: rgba(72, 78, 112, 0.12);
+    --border-md: rgba(72, 78, 112, 0.18);
+    --text: #11131A;
+    --text-2: #565C70;
+    --text-3: #8B91A4;
+    --radius: 14px;
+    --radius-lg: 18px;
+    --shadow-sm: 0 10px 30px rgba(24, 28, 56, 0.06);
+    --shadow-md: 0 18px 50px rgba(24, 28, 56, 0.10);
+    --grad-main: linear-gradient(105deg, #073BFF 0%, #5433E8 48%, #D126C8 100%);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 6% 8%, rgba(75,50,255,0.08), transparent 30%),
+      radial-gradient(circle at 90% 4%, rgba(229,51,199,0.07), transparent 26%),
+      var(--bg);
+    letter-spacing: 0;
+  }
+
+  .app-header {
+    height: 66px;
+    padding: 0 30px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 1px 0 rgba(29,35,65,0.08);
+  }
+  .logo-badge {
+    background: transparent;
+    color: #05070D;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    padding: 0 22px 0 0;
+    border-radius: 0;
+    border-right: 1px solid var(--border-md);
+  }
+  .app-header h1 { font-size: 18px; font-weight: 750; }
+  .header-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-2);
+  }
+  .header-meta::before { content: '◎'; color: var(--text-2); font-size: 16px; }
+  .header-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 14px;
+    margin-left: 8px;
+    border-left: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--text);
+  }
+  .header-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    color: #fff;
+    background: linear-gradient(135deg, #15151E, #FF5A45);
+    font-size: 12px;
+    box-shadow: 0 6px 14px rgba(229,51,199,0.18);
+  }
+
+  .app-nav {
+    justify-content: center;
+    align-items: center;
+    gap: 34px;
+    padding: 14px 30px 12px;
+    background: rgba(255,255,255,0.78);
+    backdrop-filter: blur(14px);
+    border-bottom: none;
+  }
+  .nav-tab {
+    min-width: 178px;
+    padding: 9px 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 0;
+    border-radius: 999px;
+    color: var(--text-2);
+    background: transparent;
+    position: relative;
+  }
+  .nav-tab:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    width: 46px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(98,105,130,0.18), rgba(98,105,130,0.42));
+  }
+  .nav-tab .step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    background: #E9ECF4;
+    color: #6D7283;
+    font-weight: 800;
+    font-size: 12px;
+  }
+  .nav-tab.active {
+    color: #fff;
+    background: linear-gradient(100deg, #064DFF, #5B31EE 48%, #D126C8);
+    box-shadow: 0 12px 26px rgba(75,50,255,0.24);
+  }
+  .nav-tab.active .step-num { background: #fff; color: var(--brand); }
+
+  .app-body { max-width: 1540px; padding: 20px 30px 34px; }
+  .campaign-hero {
+    min-height: 148px;
+    margin-bottom: 18px;
+    padding: 26px 32px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 480px;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 22px;
+    background:
+      radial-gradient(circle at 48% 40%, rgba(255,255,255,0.16), transparent 16%),
+      radial-gradient(circle at 92% 22%, rgba(255,255,255,0.20), transparent 18%),
+      var(--grad-main);
+    color: #fff;
+    box-shadow: var(--shadow-md);
+    position: relative;
+  }
+  .campaign-hero::before {
+    content: 'WOW!';
+    position: absolute;
+    left: 44%;
+    top: 10px;
+    font-size: 54px;
+    font-weight: 900;
+    color: rgba(255,255,255,0.08);
+    transform: rotate(-14deg);
+  }
+  .hero-eyebrow { font-size: 13px; font-weight: 750; opacity: 0.86; margin-bottom: 2px; }
+  .hero-title { font-size: 54px; line-height: 0.95; font-weight: 900; font-style: italic; letter-spacing: 0; margin-bottom: 14px; }
+  .hero-title span { color: #fff; text-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+  .hero-subtitle { font-size: 18px; font-weight: 760; margin-bottom: 4px; }
+  .hero-copy { font-size: 13px; opacity: 0.88; }
+  .hero-phones {
+    min-height: 126px;
+    position: relative;
+  }
+  .phone {
+    position: absolute;
+    bottom: -20px;
+    width: 72px;
+    height: 138px;
+    border-radius: 18px;
+    border: 2px solid rgba(255,255,255,0.62);
+    box-shadow: 0 18px 34px rgba(5,9,40,0.32);
+    transform: rotate(var(--rot));
+    background: linear-gradient(150deg, var(--c1), var(--c2));
+  }
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 10px;
+    width: 16px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.48);
+    box-shadow: 0 18px 0 rgba(255,255,255,0.40), 0 36px 0 rgba(255,255,255,0.35);
+  }
+  .phone.p1 { --c1:#FFFFFF; --c2:#DDE3FF; --rot:-14deg; left: 90px; }
+  .phone.p2 { --c1:#78F0D0; --c2:#51A7FF; --rot:-6deg; left: 156px; }
+  .phone.p3 { --c1:#1F61FF; --c2:#16237A; --rot:2deg; left: 224px; }
+  .phone.p4 { --c1:#F5F0FF; --c2:#B6B5FF; --rot:9deg; left: 292px; }
+  .phone.p5 { --c1:#FFB24B; --c2:#FF693D; --rot:14deg; left: 360px; }
+  .hero-badges {
+    position: absolute;
+    right: 20px;
+    bottom: 16px;
+    display: flex;
+    gap: 8px;
+  }
+  .hero-badge {
+    padding: 7px 10px;
+    border: 1px solid rgba(255,255,255,0.38);
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 750;
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(10px);
+  }
+
+  .panel { animation: fadeIn 0.22s ease; }
+  .card,
+  .brief-card,
+  .stat-card,
+  .table-wrap,
+  #koc-sub-crawl > #panel-crawl > div,
+  #panel-tracking .table-wrap {
+    border-color: rgba(71, 78, 119, 0.12) !important;
+    box-shadow: var(--shadow-sm);
+  }
+  .card,
+  .brief-card,
+  .stat-card {
+    border-radius: 18px;
+    background: rgba(255,255,255,0.92);
+  }
+  .card-title,
+  #panel-screening h2,
+  #panel-tracking h2,
+  #panel-brief h2 {
+    font-weight: 800 !important;
+    color: var(--text);
+  }
+  .card-title::before {
+    content: '';
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #E8E4FF, #F4F2FF);
+    box-shadow: inset 0 0 0 1px rgba(75,50,255,0.10);
+  }
+
+  .btn {
+    border-radius: 11px;
+    border-color: rgba(74, 81, 122, 0.14);
+    box-shadow: 0 3px 10px rgba(24,28,56,0.04);
+  }
+  .btn:hover {
+    border-color: rgba(75,50,255,0.30);
+    background: #F7F6FF;
+    color: var(--brand);
+  }
+  .btn-primary {
+    border: 0;
+    color: #fff;
+    background: linear-gradient(100deg, #064DFF, #5B31EE 52%, #BE22C7);
+    box-shadow: 0 12px 24px rgba(75,50,255,0.26);
+  }
+  .btn-primary:hover {
+    color: #fff;
+    background: linear-gradient(100deg, #003EE4, #5432EF 52%, #C922CE);
+    transform: translateY(-1px);
+  }
+
+  input,
+  select,
+  textarea,
+  .filter-bar input,
+  .filter-bar select {
+    border-radius: 11px !important;
+    border-color: rgba(73, 80, 121, 0.14) !important;
+    background: #FBFCFF !important;
+  }
+  input:focus,
+  select:focus,
+  textarea:focus,
+  .filter-bar input:focus,
+  .filter-bar select:focus {
+    border-color: rgba(75,50,255,0.55) !important;
+    box-shadow: 0 0 0 4px rgba(75,50,255,0.08);
+  }
+
+  .koc-mode-card {
+    border-radius: 18px !important;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+  }
+  .koc-mode-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  #mode-card-input {
+    border-color: rgba(75,50,255,0.30) !important;
+    background: linear-gradient(135deg, #FFFFFF, #F3F0FF) !important;
+  }
+  #mode-card-crawl {
+    border-color: rgba(75,50,255,0.16) !important;
+    background: linear-gradient(135deg, #FFFFFF, #F9FBFF) !important;
+  }
+
+  .stats-row { grid-template-columns: repeat(5, minmax(160px, 1fr)); gap: 14px; }
+  .stat-card {
+    min-height: 104px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    right: 18px;
+    top: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(75,50,255,0.12), rgba(229,51,199,0.10));
+  }
+  .stat-label { font-size: 12px; font-weight: 750; color: var(--text-2); }
+  .stat-value {
+    font-size: 30px;
+    line-height: 1.1;
+    color: #1733E7;
+    margin-top: 6px;
+  }
+
+  .table-wrap {
+    border-radius: 18px;
+    background: #fff;
+    overflow: auto;
+  }
+  thead th {
+    background: linear-gradient(180deg, #FBFCFF, #F4F6FC);
+    color: #3A4055;
+    font-weight: 800;
+    padding: 12px 14px;
+  }
+  tbody td { padding: 12px 14px; }
+  tbody tr:hover { background: #F8F7FF; }
+  .score-track { background: #E8E9F5; height: 6px; }
+  .score-fill { background: linear-gradient(90deg, #064DFF, #8A35EF) !important; }
+  .status-pass,
+  .status-risk,
+  .status-fail,
+  .status-pending,
+  .brief-tag,
+  .risk-tag {
+    border-radius: 999px;
+    font-weight: 800;
+  }
+  .status-pass { background: #EAF8EF; color: #15824D; }
+  .status-risk { background: #FFF2DE; color: #B45B08; }
+  .status-fail { background: #FFECEF; color: #B83246; }
+  .brief-content { background: #F7F8FD; border: 1px solid rgba(75,50,255,0.07); border-radius: 14px; }
+  .brief-card { position: relative; overflow: hidden; }
+  .brief-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 5px;
+    background: var(--grad-main);
+  }
+
+  .kw-chip,
+  .kw-suggest {
+    border-radius: 999px;
+    padding: 5px 12px;
+    background: #F5F2FF;
+    border-color: rgba(75,50,255,0.18);
+    color: var(--brand);
+    font-weight: 750;
+  }
+
+  @media (max-width: 980px) {
+    .app-header { padding: 0 16px; }
+    .logo-badge { font-size: 22px; padding-right: 14px; }
+    .app-header h1 { font-size: 15px; }
+    .header-profile { display: none; }
+    .app-nav { justify-content: flex-start; overflow-x: auto; gap: 12px; padding: 12px 16px; }
+    .nav-tab { min-width: 142px; }
+    .nav-tab:not(:last-child)::after { display: none; }
+    .app-body { padding: 14px 16px 26px; }
+    .campaign-hero { grid-template-columns: 1fr; padding: 24px; }
+    .hero-title { font-size: 38px; }
+    .hero-phones { display: none; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -202,17 +585,38 @@
 <header class="app-header">
   <span class="logo-badge">INFINIX</span>
   <h1>Hot 70 · KOC 筛选工作流</h1>
-  <span class="header-meta">Global KOC Recruitment &nbsp;·&nbsp; v0618</span>
+  <span class="header-meta">Global KOC Recruitment</span>
+  <span class="header-profile"><span class="header-avatar">A</span>Ada Marketer</span>
 </header>
 
 <nav class="app-nav">
-  <div class="nav-tab active" data-panel="panel-brief">① 合作 Brief</div>
-  <div class="nav-tab" data-panel="panel-koc">② 筛选 KOC</div>
-  <div class="nav-tab" data-panel="panel-screening">③ 筛选结果</div>
-  <div class="nav-tab" data-panel="panel-tracking">④ KOC Tracking</div>
+  <div class="nav-tab" data-panel="panel-brief"><span class="step-num">1</span><span>合作 Brief</span></div>
+  <div class="nav-tab active" data-panel="panel-koc"><span class="step-num">2</span><span>筛选 KOC</span></div>
+  <div class="nav-tab" data-panel="panel-screening"><span class="step-num">3</span><span>筛选结果</span></div>
+  <div class="nav-tab" data-panel="panel-tracking"><span class="step-num">4</span><span>KOC Tracking</span></div>
 </nav>
 
 <div class="app-body">
+<section class="campaign-hero" aria-label="Hot 70 campaign banner">
+  <div>
+    <div class="hero-eyebrow">Infinix Hot 70 系列全球 KOC 招募计划</div>
+    <div class="hero-title"><span>HOT</span> Like YOU</div>
+    <div class="hero-subtitle">与 Z 世代一起，点燃全网热度</div>
+    <div class="hero-copy">Lagos & Ibadan · TikTok creators · AI Brief · Screening · Tracking</div>
+  </div>
+  <div class="hero-phones" aria-hidden="true">
+    <span class="phone p1"></span>
+    <span class="phone p2"></span>
+    <span class="phone p3"></span>
+    <span class="phone p4"></span>
+    <span class="phone p5"></span>
+    <div class="hero-badges">
+      <span class="hero-badge">Dynamic Shine Design</span>
+      <span class="hero-badge">6000mAh · 45W</span>
+      <span class="hero-badge">50MP CAM</span>
+    </div>
+  </div>
+</section>
 
 <!-- =================== PANEL 1: 筛选 KOC =================== -->
 <div class="panel active" id="panel-koc">
@@ -453,6 +857,7 @@
           <span class="kw-suggest" onclick="kwAppend('university vlog')">university vlog</span>
           <span class="kw-suggest" onclick="kwAppend('tech lifestyle')">tech lifestyle</span>
         </div>
+        <div id="kw-chips" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
       </div>
 
       <!-- 数据门槛 -->
@@ -1098,9 +1503,8 @@ function initApp() {
   renderInputTable();
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelector('[data-panel="panel-brief"]').classList.add('active');
-  document.getElementById('panel-brief').classList.add('active');
-  renderBriefs();
+  document.querySelector('[data-panel="panel-koc"]').classList.add('active');
+  document.getElementById('panel-koc').classList.add('active');
 }
 let parsedCSV = null;
 
@@ -2516,7 +2920,8 @@ document.getElementById('btn-cancel-csv').onclick = () => {
 };
 
 // =================== SAMPLE DATA ===================
-document.getElementById('btn-load-sample').onclick = () => {
+const btnLoadSample = document.getElementById('btn-load-sample');
+if (btnLoadSample) btnLoadSample.onclick = () => {
   const samples = [
     { id: 'tt001', platform:'tiktok', name:'Adenike Johnson', username:'@adenike_lagos', url:'', city:'Lagos', school:'UNILAG', grade:'大三 / Mass Comm', whatsapp:'+2348012345678', email:'adenike@gmail.com', followers:18500, avgViews:4200, videos:[4500,4100,3800,5200,3400], likes:380, comments:65, shares:42, engagementRate:11.6, frequency:'3-5/week', growthTrend:'up', geoLabel:'50+', lagosAudience:55, hasTechContent:'yes', brandExp:'yes', hasInstagram:'yes', source:'outreach', accountAge:'1-2y', category:'campus', audienceAge:'18-24', manualRisks:[] },
     { id: 'tt002', platform:'tiktok', name:'Chukwuemeka Obi', username:'@techbro_obi', url:'', city:'Lagos', school:'LASU', grade:'大四 / Computer Sci', whatsapp:'+2348023456789', email:'', followers:9200, avgViews:1600, videos:[1800,1500,1400,2100,1200], likes:210, comments:38, shares:25, engagementRate:17.1, frequency:'3-5/week', growthTrend:'up', geoLabel:'30-50', lagosAudience:40, hasTechContent:'yes', brandExp:'no', hasInstagram:'no', source:'outreach', accountAge:'1-2y', category:'tech', audienceAge:'18-24', manualRisks:[] },
@@ -2613,22 +3018,74 @@ function downloadFile(filename, content, type) {
 
 // =================== TIKTOK AUTO-CRAWL ===================
 
-function kwAppend(kw) {
+function parseKeywords(value) {
+  const seen = new Set();
+  return String(value || '')
+    .split(/[,，\n]+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .filter(kw => {
+      const key = kw.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function syncKwInput() {
+  const el = document.getElementById('kw-input');
+  if (el) el.value = kwList.join(', ');
+}
+
+function renderKwChips() {
+  const wrap = document.getElementById('kw-chips');
+  if (!wrap) return;
+  wrap.innerHTML = kwList.map((kw, i) => `<span class="kw-chip">${kw}<span class="rm" onclick="removeKw(${i})">✕</span></span>`).join('');
+}
+
+function commitKwInput() {
   const el = document.getElementById('kw-input');
   if (!el) return;
-  const cur = el.value.trim();
-  const parts = cur ? cur.split(',').map(s => s.trim()).filter(Boolean) : [];
-  if (!parts.includes(kw)) parts.push(kw);
-  el.value = parts.join(', ');
+  kwList = parseKeywords(el.value);
+  syncKwInput();
+  renderKwChips();
 }
+
+function kwAppend(kw) {
+  commitKwInput();
+  const exists = kwList.some(item => item.toLowerCase() === String(kw).toLowerCase());
+  if (!exists) kwList.push(kw);
+  syncKwInput();
+  renderKwChips();
+}
+
+function removeKw(i) {
+  kwList.splice(i, 1);
+  syncKwInput();
+  renderKwChips();
+}
+
 function getKwList() {
-  const val = document.getElementById('kw-input')?.value || '';
-  return val.split(',').map(s => s.trim()).filter(Boolean);
+  commitKwInput();
+  return [...kwList];
+}
+
+const kwInputEl = document.getElementById('kw-input');
+if (kwInputEl) {
+  kwInputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitKwInput();
+    }
+  });
+  kwInputEl.addEventListener('blur', commitKwInput);
 }
 
 function clearCrawl() {
   crawlResults.length = 0;
+  kwList = [];
   const ki = document.getElementById('kw-input'); if (ki) ki.value = '';
+  renderKwChips();
   document.getElementById('crawl-results-wrap').style.display = 'none';
   document.getElementById('crawl-tip').style.display = 'block';
   document.getElementById('crawl-progress').style.display = 'none';
@@ -2647,6 +3104,7 @@ function getCriteria() {
     category:     document.getElementById('c-category').value,
     lang:         document.getElementById('c-lang').value,
     geo:          document.getElementById('c-geo').value,
+    geoRate:      document.getElementById('c-geo-rate').value,
     limit:        parseInt(document.getElementById('c-limit').value) || 20,
   };
 }
@@ -2700,19 +3158,20 @@ async function startManualFetch() {
 }
 
 function copyClaudePrompt() {
-  const keywords = getKwList().join('、') || '（未填写关键词）';
+  const cr = getCriteria();
+  const keywords = cr.keywords.join('、') || '（未填写关键词）';
   const minFollowers = document.getElementById('c-min-followers')?.value || '5000';
   const minViews = document.getElementById('c-min-views')?.value || '1000';
   const minEng = document.getElementById('c-min-eng')?.value || '3';
-  const category = document.getElementById('c-category')?.value || '不限';
-  const lang = document.getElementById('c-lang')?.value || '不限';
-  const geo = document.getElementById('c-geo')?.value || '';
+  const category = getSelectLabel('c-category');
+  const lang = getSelectLabel('c-lang');
+  const geo = getSelectLabel('c-geo');
   const geoRate = document.getElementById('c-geo-rate')?.value || '';
   const limit = document.getElementById('c-limit')?.value || '20';
 
-  const categoryLine = category && category !== '不限' ? `\n- 内容类型：${category}` : '';
-  const langLine = lang && lang !== '不限' ? `\n- 内容语言：${lang}` : '';
-  const geoLine = geo ? `\n- 受众城市：${geo}${geoRate ? `，覆盖率 ≥${geoRate}%` : ''}` : '';
+  const categoryLine = `\n- 内容类型：${category}`;
+  const langLine = `\n- 内容语言：${lang}`;
+  const geoLine = `\n- 受众城市：${geo}${geoRate ? `，覆盖率 ≥${geoRate}%` : ''}`;
 
   const prompt = `请帮我在 TikTok 上采集 KOC 账号，条件如下：
 - 搜索关键词：${keywords}
@@ -2730,6 +3189,13 @@ function copyClaudePrompt() {
   }).catch(() => {
     alert('请手动复制以下指令：\n\n' + prompt);
   });
+}
+
+function getSelectLabel(id) {
+  const el = document.getElementById(id);
+  if (!el) return '不限';
+  const option = el.options[el.selectedIndex];
+  return option ? option.textContent.trim() : (el.value || '不限');
 }
 
 async function startAutoCrawl() {
