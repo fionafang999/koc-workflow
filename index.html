@@ -686,7 +686,9 @@
   <div id="screening-empty" class="empty-state" style="display:none;">
     <div class="icon">🔍</div>
     <h3>暂无筛选数据</h3>
-    <p>请先在「数据录入」面板添加 KOC</p>
+    <p id="screening-empty-msg">请先在「数据录入」面板添加 KOC</p>
+    <div id="debug-info" style="margin-top:12px;font-size:11px;color:var(--text-3);background:var(--surface);padding:8px 12px;border-radius:6px;text-align:left;display:none;"></div>
+    <button onclick="resetAndSeed();renderInputTable();renderScreening();showToast('✅ 已重新加载 '+kocData.length+' 个KOC');" style="margin-top:12px;padding:8px 20px;background:var(--brand);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">🔄 重新加载数据</button>
   </div>
 
 </div>
@@ -1485,6 +1487,12 @@ function renderScreening() {
   if (filtered.length === 0) {
     tbody.innerHTML = '';
     empty.style.display = '';
+    const dbg = document.getElementById('debug-info');
+    if (dbg) {
+      const lsRaw = localStorage.getItem(LS_KEY);
+      dbg.style.display = 'block';
+      dbg.innerHTML = `kocData.length = <b>${kocData.length}</b> | localStorage key: <b>${lsRaw ? JSON.parse(lsRaw).length+'条' : '空'}</b> | ver: <b>${localStorage.getItem(LS_VER_KEY)||'无'}</b>`;
+    }
     return;
   }
   empty.style.display = 'none';
