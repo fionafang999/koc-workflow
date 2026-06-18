@@ -457,6 +457,7 @@
           <span class="kw-suggest" onclick="addKw('university vlog')">university vlog</span>
           <span class="kw-suggest" onclick="addKw('tech lifestyle')">tech lifestyle</span>
         </div>
+        <div id="kw-debug" style="margin-top:4px;font-size:11px;color:var(--text-3);"></div>
       </div>
 
       <!-- 数据门槛 -->
@@ -858,6 +859,10 @@
 </div>
 
 <script>
+// global mutable arrays — declared as var so they're on window and always accessible
+var kwList = [];
+var crawlResults = [];
+
 // =================== LOCAL STORAGE ===================
 const LS_KEY = 'koc_workflow_v1';
 const LS_VER_KEY = 'koc_workflow_ver';
@@ -2612,8 +2617,6 @@ function downloadFile(filename, content, type) {
 }
 
 // =================== TIKTOK AUTO-CRAWL ===================
-const kwList = [];
-const crawlResults = [];
 
 function renderKwChips() {
   const row = document.getElementById('kw-chips-row');
